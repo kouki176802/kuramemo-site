@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>デモ公式フィード</title>
+    <link>https://example.com/official</link>
+    <description>オフライン試験用の架空フィード</description>
+    <item>
+      <title>広い地域で猛暑となる見込み</title>
+      <link>https://example.com/official/heat-forecast</link>
+      <description>今後、広い地域で気温が上昇し、熱帯夜も増える見込みです。</description>
+      <pubDate>Wed, 24 Jun 2026 09:00:00 +0900</pubDate>
+      <guid>demo-heat-20260624</guid>
+    </item>
+    <item>
+      <title>人気AIサービスが新しい文書整理機能を発表</title>
+      <link>https://example.com/official/ai-feature</link>
+      <description>文書の分類と要約を支援する新機能が発表されました。</description>
+      <pubDate>Wed, 24 Jun 2026 10:00:00 +0900</pubDate>
+      <guid>demo-ai-20260624</guid>
+    </item>
+  </channel>
+</rss>
+

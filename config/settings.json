@@ -1,0 +1,36 @@
+{
+  "company_name": "選び方メモ（仮）",
+  "timezone": "Asia/Tokyo",
+  "database_path": "var/trend_commerce.db",
+  "output_dir": "output",
+  "draft_threshold": 65,
+  "auto_publish_threshold": 999,
+  "max_candidates_per_run": 3,
+  "max_daily_generation_cost_yen": 100,
+  "categories": [
+    "季節・暮らし",
+    "美容",
+    "フィットネス",
+    "健康",
+    "AI・ガジェット"
+  ],
+  "banned_topics": [
+    "診断",
+    "治療",
+    "処方",
+    "投資助言",
+    "必ず儲かる",
+    "死亡",
+    "殺人",
+    "事故現場",
+    "芸能人 炎上",
+    "災害便乗"
+  ],
+  "dark_pattern_terms": [
+    "絶対買うべき",
+    "知らないと大損",
+    "今すぐ買わないと手遅れ",
+    "残りわずか",
+    "みんな買っている"
+  ]
+}

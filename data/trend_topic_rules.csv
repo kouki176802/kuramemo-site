@@ -1,0 +1,12 @@
+rule_id,category,page_slug,context,audience,trigger_terms,product_terms,genre_id,genre_name
+heat,季節・暮らし,heat-relief-items-comparison,暑い日の外出・室内・就寝対策,暑さや寝苦しさを減らしたい人,猛暑|暑さ|熱中症|気温|夏日|酷暑|heat wave|hot weather,扇風機|サーキュレーター|冷感|クール|遮熱,562637,家電
+charging,AI・ガジェット,charging-power-items-comparison,新型スマホや外出時の充電対策,スマホやタブレットを外で使う人,iPhone|Android|Pixel|Galaxy|スマホ|Apple|充電|battery|smartphone,充電器|モバイルバッテリー|USB-C|Type-C|ワイヤレス充電,564500,スマートフォン・タブレット
+pc,AI・ガジェット,pc-accessories-comparison,PC作業や在宅環境の改善,PC作業の負担や配線を減らしたい人,Windows|MacBook|パソコン|PC|在宅勤務|リモートワーク|ゲーミング|laptop|computer,マウス|キーボード|USBハブ|ノートパソコンスタンド|Webカメラ,100026,パソコン・周辺機器
+beauty,美容,skincare-basics-comparison,毎日の洗顔・保湿・紫外線対策,肌の手入れを無理なく続けたい人,美容|化粧品|スキンケア|日焼け|紫外線|UV|乾燥肌|cosmetics|skincare,洗顔|保湿|日焼け止め|化粧水|オールインワン,100939,美容・コスメ・香水
+selfcare,美容,hair-grooming-items-comparison,髪や体のセルフケア,自宅で身だしなみを整えたい人,ヘアスタイル|髪型|脱毛|シェーバー|美容家電|hair|beauty device,ヘアワックス|脱毛器|シェーバー|ヘアアイロン|トリマー,100939,美容・コスメ・香水
+fitness,フィットネス,home-training-items-comparison,自宅トレーニングや運動習慣,運動を始めたい人,筋トレ|格闘技|スポーツ|トレーニング|フィットネス|ジム|workout|fitness|boxing,トレーニングマット|ダンベル|チューブ|フォームローラー,101070,スポーツ・アウトドア
+fitness_food,フィットネス,fitness-supplements-comparison,運動時の栄養補助,運動習慣に合わせて補助食品を選びたい人,プロテイン|クレアチン|筋トレ|ボディメイク|protein|creatine,プロテイン|クレアチン|EAA|BCAA|グルタミン,101070,スポーツ・アウトドア
+wellness,健康,health-support-supplements-comparison,食生活を補う成分選び,食事内容を確認して補助食品を選びたい人,ビタミン|食物繊維|乳酸菌|腸活|栄養|wellness|vitamin,ビタミン|食物繊維|乳酸菌|カルシウム|マグネシウム,100938,ダイエット・健康
+disaster,防災・備蓄,disaster-preparedness-items-comparison,停電・断水・避難への備え,自宅や持ち出し品を点検したい人,地震|台風|大雨|豪雨|停電|断水|防災|避難|災害|earthquake|typhoon,防災|非常食|携帯トイレ|ポータブル電源|ランタン,562637,家電
+housework,家事・時短,housework-timesaving-items-comparison,掃除・洗濯・料理の時短,家事の手間を減らしたい人,家事|時短|掃除|洗濯|料理|新生活|共働き|housework,掃除機|布団乾燥機|衣類スチーマー|電気圧力鍋|空気清浄機,562637,家電
+travel,旅行・外出,travel-outdoor-items-comparison,旅行や長時間移動の準備,荷造りと移動を楽にしたい人,旅行|海外旅行|観光|航空|飛行機|連休|夏休み|travel|tourism|flight,スーツケース|トラベルポーチ|ネックピロー|旅行用充電器,101070,スポーツ・アウトドア

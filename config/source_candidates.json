@@ -1,0 +1,29 @@
+[
+  {
+    "name": "気象庁 防災情報XML 定時",
+    "url": "https://www.data.jma.go.jp/developer/xml/feed/regular.xml",
+    "kind": "atom",
+    "category": "季節・暮らし",
+    "trust_level": 5,
+    "active": false,
+    "review_note": "2026-06-24に取得・Atom解析成功。公式PULL型だが防災情報は商業利用の倫理審査が必要なため初期無効。"
+  },
+  {
+    "name": "気象庁 防災情報XML 随時",
+    "url": "https://www.data.jma.go.jp/developer/xml/feed/extra.xml",
+    "kind": "atom",
+    "category": "季節・暮らし",
+    "trust_level": 5,
+    "active": false,
+    "review_note": "災害・警報への便乗販売を禁止。情報監視用途に限定。"
+  },
+  {
+    "name": "Google Japan Blog",
+    "url": "https://blog.google/intl/ja-jp/rss/",
+    "kind": "rss",
+    "category": "AI・ガジェット",
+    "trust_level": 5,
+    "active": false,
+    "review_note": "2026-06-24に取得・RSS解析20件成功。config/sources.jsonで有効化済み。"
+  }
+]

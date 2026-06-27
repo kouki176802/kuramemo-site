@@ -1,0 +1,7 @@
+market,language,first_categories,affiliate_route,localization_required,priority,status
+United States,en,AI SaaS|gadgets|travel,Amazon US|Impact|PartnerStack,USD価格|FTC広告表記|米国在庫|英語レビュー,A,planned
+United Kingdom,en,AI SaaS|gadgets,Amazon UK|Awin|Impact,GBP価格|英国在庫|返品条件,B,planned
+Australia,en,travel|gadgets,Amazon AU|Impact,AUD価格|豪州配送|季節反転,B,planned
+Singapore,en,travel eSIM|AI SaaS,Impact|PartnerStack,SGD価格|対応国|英語UI,B,planned
+Taiwan,zh-TW,travel|beauty,現地EC案件|Impact,繁体字|TWD価格|現地配送,C,research
+South Korea,ko,beauty|gadgets,現地ASP|Impact,韓国語|KRW価格|現地レビュー,C,research

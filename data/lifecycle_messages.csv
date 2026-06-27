@@ -1,0 +1,11 @@
+sequence_id,step,delay_days,channel,goal,subject_or_hook,cta,target_segment,status
+welcome_compare,1,0,email_or_line,期待値調整,くらメモへようこそ,気になるカテゴリを1つ選ぶ,new_subscriber,draft
+welcome_compare,2,1,email_or_line,悩み分類,最初に決めるのは商品ではなく使う場面,用途別ガイドを見る,new_subscriber,draft
+welcome_compare,3,3,email_or_line,信頼形成,買わなくてよいケースも先に確認,手持ちで足りるか確認,new_subscriber,draft
+welcome_compare,4,5,email_or_line,比較,候補を3つまでに絞る見方,比較表を開く,new_subscriber,draft
+welcome_compare,5,7,email_or_line,行動,価格より先に確認したい条件,販売ページで最新条件を見る,new_subscriber,draft
+seasonal_alert,1,0,email_or_line,先取り,次の季節に備える候補,季節ガイドを見る,seasonal_interest,draft
+seasonal_alert,2,4,email_or_line,比較,用途別に候補を分けました,比較表を開く,seasonal_interest,draft
+price_followup,1,0,email,再検討,クリックした商品の条件は変わっていませんか,最新価格と在庫を見る,clicked_no_conversion,draft
+service_trial,1,0,email,条件理解,無料期間より先に解約条件を確認,サービス比較を見る,service_interest,draft
+service_trial,2,3,email,選択支援,月額と買い切りの総額を比べる,料金表を確認,service_interest,draft

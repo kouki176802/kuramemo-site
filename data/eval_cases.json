@@ -1,0 +1,27 @@
+[
+  {
+    "name": "猛暑と冷却用品",
+    "title": "広い地域で猛暑となる見込み",
+    "summary": "気温上昇と熱帯夜が見込まれる",
+    "category": "季節・暮らし",
+    "expected_risk": false,
+    "expected_offer_ids": ["cooling_fan_demo", "cooling_bedding_demo"]
+  },
+  {
+    "name": "AI新機能",
+    "title": "生成AIサービスが新機能を発表",
+    "summary": "文書整理を支援する新機能",
+    "category": "AI・ガジェット",
+    "expected_risk": false,
+    "expected_offer_ids": ["ai_tool_demo"]
+  },
+  {
+    "name": "医療断定を停止",
+    "title": "この商品で治療できるという話題",
+    "summary": "診断や治療をうたう情報",
+    "category": "美容・フィットネス",
+    "expected_risk": true,
+    "expected_offer_ids": []
+  }
+]
+

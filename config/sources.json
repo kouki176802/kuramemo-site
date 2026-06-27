@@ -1,0 +1,18 @@
+[
+  {
+    "name": "デモ公式フィード",
+    "url": "data/sample_feed.xml",
+    "kind": "rss",
+    "category": "",
+    "trust_level": 5,
+    "active": false
+  },
+  {
+    "name": "Google Japan Blog",
+    "url": "https://blog.google/intl/ja-jp/rss/",
+    "kind": "rss",
+    "category": "AI・ガジェット",
+    "trust_level": 5,
+    "active": true
+  }
+]

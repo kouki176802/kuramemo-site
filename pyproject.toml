@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trend-commerce-bot"
+version = "0.1.0"
+description = "Local-first trend commerce affiliate operations bot"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+trend-commerce = "trend_commerce.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["trend_commerce*"]
+

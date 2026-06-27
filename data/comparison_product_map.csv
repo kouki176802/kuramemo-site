@@ -1,0 +1,73 @@
+﻿page_slug,page_title,category,offer_candidate_id,product_group,priority,search_keywords,reader_problem,comparison_points,affiliate_priority,status,notes
+ai-tools-comparison,AIツール比較,AI・ガジェット,ai_writing_tool_research,AIライティングツール,A,AI ライティング|文章生成|ブログ 下書き,文章作成や要約を短縮したい,月額料金|無料枠|商用利用|日本語品質|解約条件,adobe_jp|partnerstack_global|impact_global,research,実サービス名は公式料金と規約確認後に追加
+ai-tools-comparison,AIツール比較,AI・ガジェット,ai_design_tool_research,AIデザインツール,A,AI デザイン|画像生成|バナー 作成,SNS画像やアイキャッチを作りたい,商用利用|テンプレート|画像権利|出力形式,adobe_jp|partnerstack_global,research,Adobe Express等は提携後に候補化
+ai-tools-comparison,AIツール比較,AI・ガジェット,ai_meeting_tool_research,議事録・要約AI,B,AI 議事録|文字起こし|要約,会議や音声の整理を短縮したい,料金|録音時間|データ管理|日本語対応,impact_global|partnerstack_global,research,機密情報の入力注意を必須化
+charging-power-items-comparison,充電・モバイル電源比較,AI・ガジェット,usb_c_charger_small_research,小型USB-C充電器,A,急速充電器|USB-C 充電器|スマホ 充電器,スマホを早く充電したい,出力|ポート数|サイズ|保証,rakuten_jp|moshimo_jp|amazon_jp,research,端末対応とケーブル対応を必ず確認
+charging-power-items-comparison,充電・モバイル電源比較,AI・ガジェット,usb_c_charger_multi_research,多ポート充電器,A,多ポート 充電器|USB-C 2ポート|充電器 複数,複数端末をまとめて充電したい,同時出力|発熱|サイズ|保証,rakuten_jp|moshimo_jp|amazon_jp,research,同時充電時の出力配分を比較項目へ
+charging-power-items-comparison,充電・モバイル電源比較,AI・ガジェット,usb_c_cable_research,USB-Cケーブル,B,USB-C ケーブル|急速充電 ケーブル|PD ケーブル,充電器性能を活かしたい,対応W数|長さ|耐久性|認証,rakuten_jp|moshimo_jp|amazon_jp,research,次の比較ページ候補
+charging-power-items-comparison,充電・モバイル電源比較,AI・ガジェット,wireless_charger_research,ワイヤレス充電器,B,ワイヤレス充電器|MagSafe 充電器|Qi2 充電器,置くだけ充電を使いたい,対応規格|充電速度|発熱|スタンド形状,rakuten_jp|amazon_jp|moshimo_jp,research,対応端末とケース干渉を明記
+charging-power-items-comparison,充電・モバイル電源比較,AI・ガジェット,charging_station_research,充電ステーション,C,充電ステーション|充電スタンド 複数|デスク 充電 整理,デスク周りの充電をまとめたい,同時充電数|設置面積|ケーブル管理|安全性,rakuten_jp|amazon_jp|moshimo_jp,research,ガジェット棚の拡張候補
+charging-power-items-comparison,充電・モバイル電源比較,AI・ガジェット,mobile_battery_light_research,軽量モバイルバッテリー,A,モバイルバッテリー 軽量|小型 バッテリー,毎日持ち歩きたい,容量|重さ|サイズ|出力,rakuten_jp|moshimo_jp|amazon_jp,research,日常用としてSNS向き
+charging-power-items-comparison,充電・モバイル電源比較,AI・ガジェット,mobile_battery_high_output_research,高出力モバイルバッテリー,A,モバイルバッテリー 高出力|ノートPC 充電,タブレットやPCも充電したい,出力|容量|重量|ケーブル対応,rakuten_jp|moshimo_jp|amazon_jp,research,PC充電は対応機種確認必須
+charging-power-items-comparison,充電・モバイル電源比較,AI・ガジェット,mobile_battery_cable_built_in_research,ケーブル内蔵バッテリー,B,ケーブル内蔵 モバイルバッテリー,ケーブル忘れを防ぎたい,内蔵端子|耐久性|容量|重さ,rakuten_jp|moshimo_jp|amazon_jp,research,断線時の注意を記載
+charging-power-items-comparison,充電・モバイル電源比較,AI・ガジェット,magsafe_battery_research,MagSafe対応バッテリー,B,MagSafe モバイルバッテリー|ワイヤレス モバイルバッテリー,ケーブルなしで充電したい,磁力|発熱|容量|厚み,rakuten_jp|amazon_jp|moshimo_jp,research,iPhoneケース相性を確認
+charging-power-items-comparison,充電・モバイル電源比較,AI・ガジェット,large_capacity_battery_research,大容量モバイルバッテリー,C,モバイルバッテリー 大容量|20000mAh モバイルバッテリー,旅行や非常用に備えたい,容量|重量|出力|機内持ち込み,rakuten_jp|amazon_jp|moshimo_jp,research,持ち歩きより備え向けとして分類
+skincare-basics-comparison,スキンケア初心者向け比較,美容,mens_facewash_research,洗顔料,A,洗顔料 人気|洗顔フォーム|洗顔パウダー,洗顔から始めたい,肌質|使用感|香り|価格|容量,rakuten_jp|moshimo_jp|a8_jp,research,治療・改善表現は禁止
+skincare-basics-comparison,スキンケア初心者向け比較,美容,mens_moisturizer_research,保湿アイテム,A,保湿ジェル|化粧水 保湿|オールインワン 保湿,保湿を簡単に続けたい,使用感|価格|容量|定期条件,rakuten_jp|moshimo_jp|a8_jp,research,医薬品的表現に注意
+skincare-basics-comparison,スキンケア初心者向け比較,美容,mens_sunscreen_research,日焼け止め,B,日焼け止め|UVクリーム|日焼け止め 顔,外出時の対策をしたい,SPF/PA|落としやすさ|使用感|容量,rakuten_jp|moshimo_jp|a8_jp,research,季節記事と連動しやすい
+skincare-basics-comparison,スキンケア初心者向け比較,美容,mens_all_in_one_research,オールインワン,B,オールインワン 化粧水|保湿 オールインワン,手間を減らして保湿したい,使用感|ベタつき|容量|香り,rakuten_jp|moshimo_jp|a8_jp,research,初心者向け導線に使いやすい
+skincare-basics-comparison,スキンケア初心者向け比較,美容,mens_lip_balms_research,リップケア,C,リップクリーム|保湿リップ|リップバーム,乾燥や清潔感を整えたい,塗り心地|香り|持ち運び|価格,rakuten_jp|moshimo_jp|amazon_jp,research,低単価だが回遊用に使う
+home-training-items-comparison,家トレ用品比較,フィットネス,training_mat_research,トレーニングマット,A,トレーニングマット|ヨガマット 厚手,床の痛みや音を減らしたい,厚み|サイズ|滑りにくさ|収納,rakuten_jp|moshimo_jp|amazon_jp,research,家トレ入口として安全
+home-training-items-comparison,家トレ用品比較,フィットネス,resistance_band_research,トレーニングチューブ,A,トレーニングチューブ|筋トレ チューブ,省スペースで運動したい,負荷|本数|耐久性|収納,rakuten_jp|moshimo_jp|amazon_jp,research,破損注意を明記
+home-training-items-comparison,家トレ用品比較,フィットネス,adjustable_dumbbell_research,可変式ダンベル,B,可変式 ダンベル|ダンベル セット|家トレ ダンベル,自宅で負荷を上げたい,重量幅|置き場所|グリップ|床保護,rakuten_jp|amazon_jp|moshimo_jp,research,怪我防止と床対策を明記
+home-training-items-comparison,家トレ用品比較,フィットネス,foam_roller_research,フォームローラー,C,フォームローラー|筋膜ローラー|ストレッチローラー,運動前後のケアをしたい,硬さ|サイズ|凹凸|収納,rakuten_jp|amazon_jp|moshimo_jp,research,医療効果は断定しない
+heat-relief-items-comparison,暑さ対策グッズ比較,季節・暮らし,portable_fan_research,携帯扇風機,A,携帯扇風機|ハンディファン|首掛け扇風機,外出時の暑さを和らげたい,重さ|音|充電|安全性,rakuten_jp|moshimo_jp|amazon_jp,research,体調不良対応ではなく日常補助として記載
+heat-relief-items-comparison,暑さ対策グッズ比較,季節・暮らし,cooling_bedding_research,冷感寝具,A,冷感寝具|冷感敷きパッド|接触冷感,寝苦しさ対策をしたい,素材|洗濯|サイズ|肌触り,rakuten_jp|moshimo_jp|amazon_jp,research,効果断定を避ける
+heat-relief-items-comparison,暑さ対策グッズ比較,季節・暮らし,air_circulator_research,サーキュレーター,B,サーキュレーター|扇風機 比較|部屋干し,室内の空気を動かしたい,風量|音|掃除|サイズ,rakuten_jp|moshimo_jp|amazon_jp,research,梅雨・部屋干し記事にも展開可
+heat-relief-items-comparison,暑さ対策グッズ比較,季節・暮らし,neck_cooler_research,ネッククーラー,B,ネッククーラー|首掛けクーラー|冷却プレート,外出時に首まわりを冷やしたい,重さ|稼働時間|音|装着感,rakuten_jp|amazon_jp|moshimo_jp,research,電車内の音と重さを確認
+heat-relief-items-comparison,暑さ対策グッズ比較,季節・暮らし,sunshade_curtain_research,遮光・断熱グッズ,C,遮光カーテン|断熱シート 窓|遮熱 カーテン,室内の熱を入りにくくしたい,設置方法|サイズ|遮光性|賃貸対応,rakuten_jp|amazon_jp|moshimo_jp,research,買う前に窓サイズ確認を促す
+disaster-preparedness-items-comparison,防災・備蓄グッズ比較,防災・備蓄,disaster_backpack_research,防災リュック,A,防災リュック|非常持ち出し袋|防災セット,まず一式そろえたい,中身|重さ|人数|保存期限,rakuten_jp|amazon_jp|moshimo_jp,research,不安訴求ではなく備えの不足確認として扱う
+disaster-preparedness-items-comparison,防災・備蓄グッズ比較,防災・備蓄,portable_power_station_research,ポータブル電源,A,ポータブル電源|防災 電源|蓄電池 ポータブル,停電時の電源を確保したい,容量|出力|充電方法|重さ,rakuten_jp|amazon_jp|moshimo_jp,research,高単価だが用途と容量を慎重に記載
+disaster-preparedness-items-comparison,防災・備蓄グッズ比較,防災・備蓄,emergency_toilet_research,携帯トイレ,A,携帯トイレ 防災|非常用トイレ|簡易トイレ,断水や避難所に備えたい,回数|処理袋|消臭|保管サイズ,rakuten_jp|amazon_jp|moshimo_jp,research,必要回数の目安を案内
+disaster-preparedness-items-comparison,防災・備蓄グッズ比較,防災・備蓄,emergency_food_research,非常食セット,B,非常食セット|防災食 セット|保存食 セット,食料をまとめて備えたい,保存期限|食数|味|水の要否,rakuten_jp|amazon_jp|moshimo_jp,research,期限管理を促す
+disaster-preparedness-items-comparison,防災・備蓄グッズ比較,防災・備蓄,disaster_lantern_radio_research,防災ランタン・ラジオ,B,防災ラジオ|防災ランタン|手回しラジオ,停電時の明かりと情報を確保したい,充電方式|明るさ|ラジオ|スマホ充電,rakuten_jp|amazon_jp|moshimo_jp,research,充電方式の確認を必須にする
+housework-timesaving-items-comparison,家事・時短家電比較,家事・時短,robot_vacuum_research,ロボット掃除機,A,ロボット掃除機|お掃除ロボット|掃除機 ロボット,床掃除を減らしたい,吸引力|段差|水拭き|手入れ,rakuten_jp|amazon_jp|moshimo_jp,research,床環境との相性を記載
+housework-timesaving-items-comparison,家事・時短家電比較,家事・時短,futon_dryer_research,布団乾燥機,A,布団乾燥機|ふとん乾燥機|靴乾燥 布団乾燥機,寝具ケアを楽にしたい,乾燥方式|収納|ホース|対応寝具,rakuten_jp|amazon_jp|moshimo_jp,research,梅雨・冬にも展開可能
+housework-timesaving-items-comparison,家事・時短家電比較,家事・時短,garment_steamer_research,衣類スチーマー,B,衣類スチーマー|ハンディスチーマー|スチームアイロン,アイロン時間を短縮したい,重さ|立ち上がり|水タンク|しわ伸ばし,rakuten_jp|amazon_jp|moshimo_jp,research,アイロン代替の限界も記載
+housework-timesaving-items-comparison,家事・時短家電比較,家事・時短,electric_pressure_cooker_research,電気圧力鍋,B,電気圧力鍋|自動調理鍋|圧力鍋 電気,料理の手間を減らしたい,容量|洗いやすさ|メニュー|置き場所,rakuten_jp|amazon_jp|moshimo_jp,research,サイズと洗い物を確認
+housework-timesaving-items-comparison,家事・時短家電比較,家事・時短,dehumidifier_laundry_research,除湿機・部屋干し,C,除湿機 部屋干し|衣類乾燥除湿機|部屋干し 乾燥,洗濯物を乾かしやすくしたい,除湿方式|音|タンク容量|電気代,rakuten_jp|amazon_jp|moshimo_jp,research,季節需要と相性が高い
+travel-outdoor-items-comparison,旅行・外出便利グッズ比較,旅行・外出,suitcase_research,スーツケース,A,スーツケース 機内持ち込み|キャリーケース|軽量 スーツケース,旅行や出張の荷物を運びたい,容量|重量|キャスター|保証,rakuten_jp|amazon_jp|moshimo_jp,research,サイズ制限を確認
+travel-outdoor-items-comparison,旅行・外出便利グッズ比較,旅行・外出,compression_pouch_research,圧縮ポーチ,A,圧縮ポーチ 旅行|トラベルポーチ 圧縮|衣類圧縮ポーチ,衣類を整理して荷物を減らしたい,圧縮方式|サイズ|耐久性|開閉しやすさ,rakuten_jp|amazon_jp|moshimo_jp,research,低単価だがSNS向き
+travel-outdoor-items-comparison,旅行・外出便利グッズ比較,旅行・外出,neck_pillow_research,ネックピロー,B,ネックピロー 旅行|トラベルピロー|首枕 飛行機,長時間移動を楽にしたい,形状|首への合い方|収納|洗濯,rakuten_jp|amazon_jp|moshimo_jp,research,体格差を注意
+travel-outdoor-items-comparison,旅行・外出便利グッズ比較,旅行・外出,travel_charger_research,トラベル充電器,B,旅行 充電器|海外 変換プラグ USB-C|トラベルアダプター,旅行中の充電をまとめたい,対応国|出力|ポート数|サイズ,rakuten_jp|amazon_jp|moshimo_jp,research,電圧とプラグ形状を確認
+travel-outdoor-items-comparison,旅行・外出便利グッズ比較,旅行・外出,security_pouch_research,セキュリティポーチ,C,セキュリティポーチ 旅行|貴重品ポーチ 海外旅行|パスポートケース,貴重品を分けて持ちたい,装着感|収納力|取り出しやすさ|防犯性,rakuten_jp|amazon_jp|moshimo_jp,research,防犯断定は避ける
+kitchen-appliances-comparison,キッチン家電比較,家事・時短,rice_cooker_research,炊飯器,A,炊飯器 3合|炊飯器 5合|IH炊飯器,ご飯を定期的に炊きたい,容量|炊飯方式|手入れ|保温,rakuten_jp|amazon_jp|moshimo_jp,research,内釜単体や交換部品を除外
+kitchen-appliances-comparison,キッチン家電比較,家事・時短,microwave_oven_research,電子レンジ,A,電子レンジ 単機能|オーブンレンジ|電子レンジ 一人暮らし,温めと解凍を短縮したい,庫内容量|出力|設置寸法|手入れ,rakuten_jp|amazon_jp|moshimo_jp,research,大型配送条件も確認
+kitchen-appliances-comparison,キッチン家電比較,家事・時短,electric_kettle_research,電気ケトル,A,電気ケトル|湯沸かしケトル|電気ポット 小型,必要な量だけ早く沸かしたい,容量|沸騰時間|安全機能|手入れ,rakuten_jp|amazon_jp|moshimo_jp,research,転倒湯漏れ対策を確認
+kitchen-appliances-comparison,キッチン家電比較,家事・時短,toaster_oven_research,オーブントースター,B,オーブントースター|トースター 2枚|トースター 4枚,パンや惣菜を手軽に焼きたい,枚数|温度調節|庫内寸法|掃除,rakuten_jp|amazon_jp|moshimo_jp,research,受け皿のみの商品を除外
+kitchen-appliances-comparison,キッチン家電比較,家事・時短,blender_mixer_research,ミキサー,B,ミキサー|ブレンダー|スムージーミキサー,飲み物や下ごしらえを短縮したい,容量|刃|洗いやすさ|収納,rakuten_jp|amazon_jp|moshimo_jp,research,交換ボトルや部品を除外
+living-appliances-comparison,暮らし家電比較,家事・時短,cordless_vacuum_research,コードレス掃除機,A,コードレス掃除機|スティック掃除機|掃除機 コードレス,こまめに床掃除したい,重さ|吸引力|稼働時間|手入れ,rakuten_jp|amazon_jp|moshimo_jp,research,交換バッテリーやヘッドを除外
+living-appliances-comparison,暮らし家電比較,家事・時短,air_purifier_research,空気清浄機,A,空気清浄機|空気清浄機 小型|加湿空気清浄機,室内の空気環境を整えたい,適用畳数|音|フィルター|サイズ,rakuten_jp|amazon_jp|moshimo_jp,research,健康効果を断定しない
+living-appliances-comparison,暮らし家電比較,家事・時短,hair_dryer_research,ドライヤー,A,ドライヤー 大風量|ヘアドライヤー|ドライヤー 速乾,身支度時間を短縮したい,風量|重さ|温度|音,rakuten_jp|amazon_jp|moshimo_jp,research,効果断定を避ける
+living-appliances-comparison,暮らし家電比較,家事・時短,electric_fan_research,扇風機,B,扇風機 リビング|扇風機 DCモーター|リビングファン,必要な場所へ風を届けたい,風量|音|首振り|収納,rakuten_jp|amazon_jp|moshimo_jp,research,卓上ミニ商品を除外
+living-appliances-comparison,暮らし家電比較,家事・時短,ceramic_heater_research,セラミックヒーター,B,セラミックヒーター|ファンヒーター 電気|足元ヒーター,足元や小空間を暖めたい,消費電力|安全機能|音|サイズ,rakuten_jp|amazon_jp|moshimo_jp,research,暖房範囲を明記
+hair-grooming-items-comparison,ヘア・身だしなみ用品比較,美容,hair_wax_research,ヘアワックス,A,ヘアワックス|ヘアワックス|スタイリング ワックス,髪型を整えたい,セット力|質感|香り|落としやすさ,rakuten_jp|amazon_jp|moshimo_jp,research,整髪料以外を除外
+hair-grooming-items-comparison,ヘア・身だしなみ用品比較,美容,home_hair_removal_research,家庭用脱毛器,A,家庭用 脱毛器|光美容器 メンズ|脱毛器,自宅でムダ毛をケアしたい,対応部位|照射方式|冷却|保証,rakuten_jp|amazon_jp|a8_jp,research,医療脱毛と混同しない
+hair-grooming-items-comparison,ヘア・身だしなみ用品比較,美容,electric_shaver_research,電気シェーバー,A,電気シェーバー メンズ|メンズシェーバー|髭剃り 電動,毎朝の髭剃りを楽にしたい,刃方式|防水|充電|替刃,rakuten_jp|amazon_jp|moshimo_jp,research,替刃と洗浄方法を確認
+hair-grooming-items-comparison,ヘア・身だしなみ用品比較,美容,body_trimmer_research,ボディトリマー,B,ボディトリマー メンズ|グルーマー|全身 トリマー,体毛の長さを整えたい,対応部位|長さ調整|防水|充電,rakuten_jp|amazon_jp|moshimo_jp,research,使用不可部位を明記
+hair-grooming-items-comparison,ヘア・身だしなみ用品比較,美容,hair_iron_research,ヘアアイロン,B,ヘアアイロン|ヘアアイロン コンパクト|ストレートアイロン,髪型を短時間で整えたい,温度|プレート幅|重さ|立ち上がり,rakuten_jp|amazon_jp|moshimo_jp,research,高温使用の注意を明記
+fitness-supplements-comparison,フィットネス補助食品比較,フィットネス,protein_research,プロテイン,A,ホエイ プロテイン 1kg|プロテイン WPC|プロテイン WPI,たんぱく質補給を続けたい,1食量|味|原材料|価格,rakuten_jp|amazon_jp|a8_jp,research,食事代替や身体変化を断定しない
+fitness-supplements-comparison,フィットネス補助食品比較,フィットネス,creatine_research,クレアチン,A,クレアチン モノハイドレート|クレアチン パウダー|creatine,運動時の栄養補助を探している,1回量|純度|原材料|価格,rakuten_jp|amazon_jp|a8_jp,research,摂取目安を守る
+fitness-supplements-comparison,フィットネス補助食品比較,フィットネス,eaa_research,EAA,B,EAA パウダー|必須アミノ酸 EAA|EAA サプリ,運動中に飲める補助食品を探している,配合量|味|溶けやすさ|価格,rakuten_jp|amazon_jp|a8_jp,research,効果保証は禁止
+fitness-supplements-comparison,フィットネス補助食品比較,フィットネス,bcaa_research,BCAA,B,BCAA パウダー|BCAA サプリ|分岐鎖アミノ酸,アミノ酸補給を検討している,配合比率|1回量|味|価格,rakuten_jp|amazon_jp|a8_jp,research,食生活との重複を確認
+fitness-supplements-comparison,フィットネス補助食品比較,フィットネス,glutamine_research,グルタミン,C,グルタミン パウダー|L-グルタミン|glutamine supplement,補助的なアミノ酸商品を探している,原材料|1回量|溶けやすさ|価格,rakuten_jp|amazon_jp|a8_jp,research,医療効果を断定しない
+health-support-supplements-comparison,健康補助サプリメント比較,健康,multivitamin_research,マルチビタミン,A,マルチビタミン サプリ|マルチビタミン ミネラル|ビタミン サプリ,複数の栄養素をまとめて確認したい,成分量|1日粒数|原材料|価格,rakuten_jp|amazon_jp|a8_jp,research,他商品との重複摂取を確認
+health-support-supplements-comparison,健康補助サプリメント比較,健康,vitamin_c_research,ビタミンC,A,ビタミンC サプリ|ビタミンC 30日分|vitamin c supplement,ビタミンC補助食品を探している,含有量|1日量|剤形|価格,rakuten_jp|amazon_jp|a8_jp,research,摂取上限と表示を確認
+health-support-supplements-comparison,健康補助サプリメント比較,健康,dietary_fiber_research,食物繊維,A,食物繊維 パウダー|難消化性デキストリン|イヌリン 食物繊維,食生活へ食物繊維を補いたい,原料|1回量|溶けやすさ|価格,rakuten_jp|amazon_jp|a8_jp,research,体調を見ながら使う
+health-support-supplements-comparison,健康補助サプリメント比較,健康,lactic_acid_bacteria_research,乳酸菌,B,乳酸菌 サプリ|乳酸菌 カプセル|ビフィズス菌 サプリ,乳酸菌商品を比較したい,菌の種類|1日量|保存|価格,rakuten_jp|amazon_jp|a8_jp,research,疾病予防や改善を断定しない
+health-support-supplements-comparison,健康補助サプリメント比較,健康,calcium_magnesium_research,カルシウム・マグネシウム,B,カルシウム マグネシウム サプリ|カルマグ サプリ|ミネラル サプリ,ミネラル補助食品を探している,成分量|配合比|1日量|価格,rakuten_jp|amazon_jp|a8_jp,research,服薬中は専門家確認を優先
+pc-accessories-comparison,PC周辺機器比較,AI・ガジェット,wireless_mouse_research,ワイヤレスマウス,A,ワイヤレスマウス 静音|Bluetooth マウス|無線 マウス,PC操作を快適にしたい,接続方式|重さ|静音|対応OS,rakuten_jp|amazon_jp|moshimo_jp,research,有線専用品やマウスパッドを除外
+pc-accessories-comparison,PC周辺機器比較,AI・ガジェット,pc_keyboard_research,PCキーボード,A,キーボード 日本語配列|ワイヤレス キーボード|PC キーボード,入力作業をしやすくしたい,配列|接続|サイズ|打鍵音,rakuten_jp|amazon_jp|moshimo_jp,research,キーキャップのみを除外
+pc-accessories-comparison,PC周辺機器比較,AI・ガジェット,usb_c_hub_research,USB-Cハブ,A,USB-C ハブ|Type-C ハブ HDMI|USB ハブ PD,PCの端子を増やしたい,ポート|映像出力|給電|対応OS,rakuten_jp|amazon_jp|moshimo_jp,research,ケーブル単品を除外
+pc-accessories-comparison,PC周辺機器比較,AI・ガジェット,laptop_stand_research,ノートPCスタンド,B,ノートPC スタンド|パソコンスタンド 折りたたみ|PCスタンド 高さ調整,ノートPCの目線を上げたい,高さ|安定性|収納|耐荷重,rakuten_jp|amazon_jp|moshimo_jp,research,スマホ専用スタンドを除外
+pc-accessories-comparison,PC周辺機器比較,AI・ガジェット,webcam_research,Webカメラ,B,Webカメラ フルHD|ウェブカメラ マイク内蔵|PC カメラ,オンライン会議の映像を整えたい,解像度|画角|マイク|対応OS,rakuten_jp|amazon_jp|moshimo_jp,research,防犯カメラを除外
