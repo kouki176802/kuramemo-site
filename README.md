@@ -4,6 +4,10 @@
 
 無料のローカル表示だけでも動作します。楽天APIを設定した現在の構成では、販売中商品・画像・レビュー・アフィリエイトURLを自動選定できます。SNS投稿BOTは国別トレンドの収集、投稿生成、承認、予約、重複防止、Discord配信履歴まで管理します。
 
+## 自宅PCでWordPressを使う
+
+ローカルWordPress、専用テーマ、REST API下書き投稿を用意しています。Docker Desktop導入後の手順は [docs/LOCAL_WORDPRESS.md](docs/LOCAL_WORDPRESS.md) を参照してください。外部公開はせず、初期状態では `127.0.0.1` 限定・`noindex` です。
+
 ## すぐ試す
 
 ```bash

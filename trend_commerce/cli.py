@@ -17,6 +17,7 @@ from .pipeline import run_pipeline
 from .product_scout import activate_candidates, best_by_offer, scout_page_products, write_candidates_csv
 from .product_operations import run_product_operations
 from .publish_check import check_publish_ready
+from .publishing import WordPressPublisher
 from .reporting import report_data, write_ceo_report
 from .rakuten import RakutenProductClient
 from .settings import ensure_directories, load_settings
@@ -392,6 +393,22 @@ def _trend_enqueue_latest(args) -> None:
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+def _wordpress_check() -> None:
+    print(json.dumps(WordPressPublisher().check_connection(), ensure_ascii=False, indent=2))
+
+
+def _wordpress_draft(args) -> None:
+    result = WordPressPublisher().create_draft_from_file(
+        Path(args.file), title=args.title, slug=args.slug, excerpt=args.excerpt,
+    )
+    print(json.dumps({
+        "id": result.get("id"),
+        "status": result.get("status"),
+        "link": result.get("link"),
+        "edit": result.get("_links", {}).get("self", [{}])[0].get("href", ""),
+    }, ensure_ascii=False, indent=2))
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="trend-commerce", description="AIトレンドコマースBOT")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -554,6 +571,12 @@ def build_parser() -> argparse.ArgumentParser:
     trend_cached = sub.add_parser("trend-enqueue-latest", help="直近48時間の検証済み話題からSNS候補を生成")
     trend_cached.add_argument("--max-items", type=int, default=6)
     trend_cached.add_argument("--approve", action="store_true")
+    sub.add_parser("wordpress-check", help="WordPress REST APIの接続を確認")
+    wordpress_draft = sub.add_parser("wordpress-draft", help="Markdown記事をWordPressへ下書き投稿")
+    wordpress_draft.add_argument("--file", required=True)
+    wordpress_draft.add_argument("--title", default="")
+    wordpress_draft.add_argument("--slug", default="")
+    wordpress_draft.add_argument("--excerpt", default="")
     return parser
 
 
@@ -594,5 +617,7 @@ def main() -> None:
         "affiliate-report": lambda: _affiliate_report(args),
         "trend-screen": lambda: _trend_screen(args),
         "trend-enqueue-latest": lambda: _trend_enqueue_latest(args),
+        "wordpress-check": lambda: _wordpress_check(),
+        "wordpress-draft": lambda: _wordpress_draft(args),
     }
     handlers[args.command]()

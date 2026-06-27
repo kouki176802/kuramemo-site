@@ -1,0 +1,64 @@
+services:
+  database:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${WP_DB_NAME:-kuramemo}
+      MARIADB_USER: ${WP_DB_USER:-kuramemo}
+      MARIADB_PASSWORD: ${WP_DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${WP_DB_ROOT_PASSWORD}
+    volumes:
+      - wordpress_database:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  wordpress:
+    image: wordpress:php8.3-apache
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WP_LOCAL_PORT:-8080}:80"
+    environment:
+      WORDPRESS_DB_HOST: database:3306
+      WORDPRESS_DB_NAME: ${WP_DB_NAME:-kuramemo}
+      WORDPRESS_DB_USER: ${WP_DB_USER:-kuramemo}
+      WORDPRESS_DB_PASSWORD: ${WP_DB_PASSWORD}
+      WORDPRESS_DEBUG: ${WP_DEBUG:-0}
+      WORDPRESS_CONFIG_EXTRA: |
+        define('DISALLOW_FILE_EDIT', true);
+        define('WP_ENVIRONMENT_TYPE', 'local');
+        define('WP_AUTO_UPDATE_CORE', 'minor');
+    volumes:
+      - wordpress_files:/var/www/html
+      - ./wordpress/theme/kuramemo:/var/www/html/wp-content/themes/kuramemo:ro
+      - ./output/site:/var/www/html/wp-content/themes/kuramemo/generated:ro
+      - ./wordpress/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+
+  wpcli:
+    image: wordpress:cli-php8.3
+    profiles: ["tools"]
+    depends_on:
+      database:
+        condition: service_healthy
+      wordpress:
+        condition: service_started
+    user: "33:33"
+    environment:
+      WORDPRESS_DB_HOST: database:3306
+      WORDPRESS_DB_NAME: ${WP_DB_NAME:-kuramemo}
+      WORDPRESS_DB_USER: ${WP_DB_USER:-kuramemo}
+      WORDPRESS_DB_PASSWORD: ${WP_DB_PASSWORD}
+    volumes:
+      - wordpress_files:/var/www/html
+      - ./wordpress/theme/kuramemo:/var/www/html/wp-content/themes/kuramemo:ro
+      - ./output/site:/var/www/html/wp-content/themes/kuramemo/generated:ro
+      - ./wordpress/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+
+volumes:
+  wordpress_database:
+  wordpress_files:
