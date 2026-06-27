@@ -16,8 +16,13 @@
 2. `config/wordpress.env.example` を `.env.wordpress` にコピーする
 3. `.env.wordpress` の3つのパスワードとメールアドレスを変更する
 4. `zsh scripts/setup_local_wordpress.sh` を実行する
-5. 管理画面の「ユーザー → プロフィール → アプリケーションパスワード」で投稿BOT用パスワードを1つ作る
-6. Git管理外の `.env` に次を設定する
+5. 次のコマンドで投稿BOT専用Application Passwordを作成し、Git管理外の `.env` へ保存する
+
+```bash
+python3 scripts/configure_wordpress_bot.py
+```
+
+手動で設定する場合は、管理画面の「ユーザー → プロフィール → アプリケーションパスワード」で投稿BOT用パスワードを作り、`.env` に次を設定します。
 
 ```dotenv
 WORDPRESS_BASE_URL=http://127.0.0.1:8080

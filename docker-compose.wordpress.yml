@@ -1,3 +1,5 @@
+name: kuramemo
+
 services:
   database:
     image: mariadb:11
@@ -35,7 +37,7 @@ services:
         define('WP_AUTO_UPDATE_CORE', 'minor');
     volumes:
       - wordpress_files:/var/www/html
-      - ./wordpress/theme/kuramemo:/var/www/html/wp-content/themes/kuramemo:ro
+      - ./wordpress/theme/kuramemo:/var/www/html/wp-content/themes/kuramemo
       - ./output/site:/var/www/html/wp-content/themes/kuramemo/generated:ro
       - ./wordpress/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
 
@@ -55,7 +57,7 @@ services:
       WORDPRESS_DB_PASSWORD: ${WP_DB_PASSWORD}
     volumes:
       - wordpress_files:/var/www/html
-      - ./wordpress/theme/kuramemo:/var/www/html/wp-content/themes/kuramemo:ro
+      - ./wordpress/theme/kuramemo:/var/www/html/wp-content/themes/kuramemo
       - ./output/site:/var/www/html/wp-content/themes/kuramemo/generated:ro
       - ./wordpress/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
 
