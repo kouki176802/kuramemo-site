@@ -14,6 +14,7 @@ from .catalog import import_offers, list_offers
 from .database import initialize
 from .models import Offer
 from .settings import ROOT, Settings
+from .utils import normalize_text
 
 
 @dataclass(frozen=True)
@@ -248,7 +249,25 @@ def _load_trend_opportunities(path: Path) -> List[Dict[str, str]]:
     if not path.exists():
         return []
     with path.open(encoding="utf-8-sig", newline="") as handle:
-        return list(csv.DictReader(handle))
+        rows = list(csv.DictReader(handle))
+    rules_path = ROOT / "data" / "trend_topic_rules.csv"
+    with rules_path.open(encoding="utf-8-sig", newline="") as handle:
+        rules = {row["rule_id"]: row for row in csv.DictReader(handle)}
+    valid: List[Dict[str, str]] = []
+    for row in rows:
+        rule = rules.get(row.get("rule_id", ""))
+        if not rule:
+            continue
+        evidence = normalize_text("%s %s" % (row.get("topic", ""), row.get("news_title", "")))
+        product = normalize_text(row.get("item_name", ""))
+        if row.get("rule_id") == "wellness" and any(term in evidence for term in ["プロテイン", "protein", "クレアチン", "creatine", "eaa", "bcaa"]):
+            continue
+        terms = [normalize_text(term) for term in rule.get("product_terms", "").split("|") if term]
+        focused = [term for term in terms if term in evidence]
+        if focused and not any(term in product for term in focused):
+            continue
+        valid.append(row)
+    return valid
 
 
 def render_trend_evidence(page_slug: str, rows: List[Dict[str, str]]) -> str:
