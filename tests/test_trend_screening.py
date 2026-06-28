@@ -1,7 +1,10 @@
 import unittest
 
-from trend_commerce.rakuten import parse_items
-from trend_commerce.trend_screening import parse_google_trends
+from trend_commerce.rakuten import RakutenProduct, parse_items
+from trend_commerce.trend_screening import (
+    TrendObservation, TrendOpportunity, TrendRule, _deduplicate_opportunities,
+    _market_label, _ranking_label, parse_google_trends,
+)
 
 
 class TrendScreeningTest(unittest.TestCase):
@@ -30,6 +33,38 @@ class TrendScreeningTest(unittest.TestCase):
         rows = parse_items(payload)
         self.assertEqual(7, rows[0].rank)
         self.assertEqual("564500", rows[0].genre_id)
+
+    def test_us_trend_uses_specific_search_rising_label(self):
+        payload = b'''<?xml version="1.0" encoding="UTF-8"?>
+        <rss xmlns:ht="https://trends.google.com/trending/rss"><channel><item>
+          <title>heat wave</title><ht:approx_traffic>1000+</ht:approx_traffic>
+          <pubDate>Sat, 27 Jun 2026 01:10:00 -0700</pubDate>
+        </item></channel></rss>'''
+        row = parse_google_trends(payload, "US")[0]
+        self.assertEqual("アメリカ", row.country_name)
+        self.assertIn("【アメリカで検索急上昇】", row.evidence_text)
+        self.assertNotIn("SNS", row.evidence_text)
+
+    def test_unknown_country_is_not_treated_as_japan(self):
+        self.assertEqual("海外で注目", _market_label("OTHER", "海外"))
+
+    def test_market_mix_keeps_overseas_and_japan_lanes(self):
+        rule_a = TrendRule("heat", "季節", "heat", "暑さ", "人", ["暑さ"], ["扇風機"], "1", "家電")
+        rule_b = TrendRule("beauty", "美容", "beauty", "美容", "人", ["美容"], ["化粧品"], "2", "美容")
+        product_a = RakutenProduct("us-item", "扇風機", 1000, 1000, "u", "a", "i", rank=1)
+        product_b = RakutenProduct("jp-item", "化粧品", 1000, 1000, "u", "a", "i", rank=1)
+        us = TrendObservation("us", "Google Trends", "US", "アメリカ", "heat wave", "1000+", "", "", "", "")
+        jp = TrendObservation("jp", "Google Trends", "JP", "日本", "美容", "1000+", "", "", "", "")
+        selected = _deduplicate_opportunities([
+            TrendOpportunity("a", rule_a, us, product_a, 80, "why", "Google Trends", ""),
+            TrendOpportunity("b", rule_b, jp, product_b, 80, "why", "Google Trends", ""),
+        ], 2)
+        self.assertEqual(["overseas_watch", "japan_now"], [item.trend_scope for item in selected])
+
+    def test_fallback_product_is_not_called_realtime_ranking(self):
+        rule = TrendRule("heat", "季節", "heat", "暑さ", "人", [], [], "1", "家電")
+        product = RakutenProduct("fallback", "扇風機", 1000, 1000, "u", "a", "i", review_count=100, review_average=4.5)
+        self.assertEqual("日本で販売中・レビュー確認済みの関連候補", _ranking_label(product, rule))
 
 
 if __name__ == "__main__":

@@ -375,7 +375,7 @@ def _trend_screen(args) -> None:
     settings = load_settings()
     result = screen_trend_opportunities(
         settings,
-        countries=args.country or ["JP", "US", "KR"],
+        countries=args.country or ["JP", "US", "KR", "GB"],
         max_items=args.max_items,
         approve=args.approve,
         enqueue=not args.no_enqueue,

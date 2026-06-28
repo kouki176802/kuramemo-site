@@ -47,8 +47,16 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
     import_offers(settings)
     target = output_dir or settings.output_dir / "site"
     if target.exists():
-        shutil.rmtree(target)
-    target.mkdir(parents=True, exist_ok=True)
+        # Keep the root directory inode stable because Docker bind-mounts it
+        # into the WordPress theme. Replacing the directory makes WordPress
+        # keep reading the old, now-empty mount until the container restarts.
+        for child in target.iterdir():
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+    else:
+        target.mkdir(parents=True, exist_ok=True)
 
     offers = {offer.offer_id: offer for offer in list_offers(settings)}
     offer_assets = _load_offer_assets(ROOT / "data" / "offer_assets.csv")
@@ -308,7 +316,7 @@ def render_trend_evidence(page_slug: str, rows: List[Dict[str, str]]) -> str:
             """
 <article class="trend-evidence-card">
   <div class="trend-evidence-copy">
-    <div class="trend-badges"><span>%sで確認</span><b>%s</b><small>%s</small></div>
+    <div class="trend-badges"><span>%s</span><b>%s</b><small>%s</small></div>
     <h2>%s</h2>
     <p class="trend-why">%s</p>
     <p class="trend-audience"><b>こんな時に</b>%s</p>
@@ -321,7 +329,7 @@ def render_trend_evidence(page_slug: str, rows: List[Dict[str, str]]) -> str:
   </div>
 </article>
 """ % (
-                html.escape(row.get("country_name", "日本")),
+                html.escape(_trend_market_label(row)),
                 html.escape(rank_label),
                 html.escape(checked_label),
                 html.escape(_shorten_display(row.get("topic", "注目商品"), 54)),
@@ -340,7 +348,7 @@ def render_trend_evidence(page_slug: str, rows: List[Dict[str, str]]) -> str:
         '<section class="trend-evidence" id="trend-evidence">'
         '<div class="section-kicker">話題の根拠</div>'
         '<h2>どこで なぜ話題か</h2>'
-        '<p class="trend-evidence-lead">検索・報道・楽天ランキングを分けて確認し、取得時点の根拠を表示しています。</p>'
+        '<p class="trend-evidence-lead">日本の現在の注目と、海外の検索急上昇を分けて確認しています。海外の話題は日本で購入できる関連商品がある場合だけ紹介します。</p>'
         + "".join(cards)
         + "</section>"
     )
@@ -383,8 +391,6 @@ def render_category_intro(
     cards = "\n".join(_category_comparison_card(comparison_pages[slug], rows) for slug, rows in matches)
     product_cards = render_category_product_shelf(page.slug, matches, offers, offer_assets)
     article_cards = render_category_articles(page, pages)
-    count = len(matches)
-    total_groups = sum(len(rows) for _, rows in matches)
     profile = _category_profile(page.title)
     playbook = "\n".join(
         "<li><b>%s</b><span>%s</span></li>" % (html.escape(title), html.escape(text))
@@ -397,11 +403,6 @@ def render_category_intro(
     <h1>%s</h1>
     <p>%s</p>
   </div>
-  <aside>
-    <span>公開中のガイド</span>
-    <strong>%s本</strong>
-    <small>%s候補を掲載</small>
-  </aside>
 </section>
 %s
 %s
@@ -418,8 +419,6 @@ def render_category_intro(
         html.escape(profile["kicker"]),
         _inline(page.title),
         html.escape(profile["lead"]).replace("\n", "<br>"),
-        count,
-        total_groups,
         '<section class="category-comparison-grid">%s</section>' % cards if cards else "",
         product_cards,
         article_cards,
@@ -1544,7 +1543,8 @@ def _home_figure(offer_assets: Dict[str, Dict[str, str]], offer_id: str, alt: st
 
 def _home_trend_cards(rows: List[Dict[str, str]]) -> str:
     cards: List[str] = []
-    for row in rows[:3]:
+    ordered = sorted(rows, key=lambda row: (row.get("country_name", "日本") == "日本", -int(float(row.get("score") or 0))))
+    for row in ordered[:3]:
         image = ""
         if row.get("image_url"):
             image = '<img src="%s" alt="%s" loading="eager">' % (
@@ -1555,7 +1555,7 @@ def _home_trend_cards(rows: List[Dict[str, str]]) -> str:
             '<a class="home-trend-card" href="%s.html#trend-evidence">%s<div><span>%s・%s</span><strong>%s</strong><p>%s</p></div></a>' % (
                 html.escape(row.get("page_slug", "index"), quote=True),
                 image,
-                html.escape(row.get("country_name", "日本")),
+                html.escape(_trend_market_label(row)),
                 html.escape(row.get("news_source", "ニュース・検索")),
                 html.escape(_shorten_display(row.get("topic", "注目商品"), 34)),
                 html.escape(_shorten_display(row.get("why_trending", "注目の理由を確認"), 72)),
@@ -1563,7 +1563,24 @@ def _home_trend_cards(rows: List[Dict[str, str]]) -> str:
         )
     if not cards:
         return ""
-    return '<section class="home-trend-pulse"><div><span>いま確認した話題</span><h2>どこで なぜ注目されているか</h2></div><div class="home-trend-grid">%s</div></section>' % "".join(cards)
+    return '<section class="home-trend-pulse"><div><span>日本の今と海外トレンド</span><h2>どこで なぜ注目されているか</h2></div><div class="home-trend-grid">%s</div></section>' % "".join(cards)
+
+
+def _trend_market_label(row: Dict[str, str]) -> str:
+    label = row.get("market_label", "")
+    if label:
+        return label
+    country = row.get("country_name", "日本")
+    if country == "米国":
+        country = "アメリカ"
+    elif country == "英国":
+        country = "イギリス"
+    evidence = row.get("evidence_label", "")
+    if "Google Trends" in evidence:
+        return "%sで検索急上昇" % country
+    if "Googleニュース" in evidence:
+        return "%sのニュースで注目" % country
+    return "%sで注目" % country
 
 
 def _home_landing(offer_assets: Dict[str, Dict[str, str]], trend_rows: List[Dict[str, str]]) -> str:
@@ -1743,7 +1760,7 @@ main { width:min(1120px, calc(100% - 24px)); margin:0 auto 44px; }
 .home .page-card { display:none; }
 .comparison-index h2, .offer-section h2 { margin:8px 0 10px; font-size: clamp(28px, 4vw, 42px); line-height:1.12; letter-spacing:-.05em; }
 .section-lead { max-width:880px; color:var(--muted); }
-.category-hero { display:grid; grid-template-columns:minmax(0, 1fr) 250px; gap:20px; align-items:center; margin:0 0 20px; padding:28px; border:1px solid rgba(59,130,246,.16); border-radius:28px; background:
+.category-hero { display:block; margin:0 0 20px; padding:28px; border:1px solid rgba(59,130,246,.16); border-radius:28px; background:
   radial-gradient(circle at 82% 12%, rgba(139,92,246,.16), transparent 28%),
   linear-gradient(145deg, rgba(255,255,255,.94), rgba(239,246,255,.86)); color:#111827; box-shadow:0 22px 68px rgba(59,130,246,.12); }
 .category-hero h1 { display:block; margin:8px 0 12px; color:#111827; font-size:clamp(42px, 5vw, 62px); line-height:.95; white-space:normal; }

@@ -6,7 +6,8 @@ from trend_commerce.database import connect, initialize, transaction
 from trend_commerce.settings import Settings
 from trend_commerce.social import (
     approve_posts, discord_ready_messages, dispatch, enqueue_social_assets, export_queue, list_queue,
-    import_manual_social_posts, mark_post_published, reject_post, reschedule_post, retry_post, set_media_urls, _x_weighted_len,
+    import_manual_social_posts, mark_post_published, reject_post, reschedule_post, retry_post, set_media_urls,
+    _fit_text, _x_weighted_len,
 )
 
 
@@ -61,6 +62,11 @@ class SocialTest(unittest.TestCase):
                 enqueue_social_assets(conn, settings, content_id, "article-1", {"x": [long_text], "threads": [], "instagram": []})
             post = next(row for row in list_queue(settings) if row["platform"] == "x")
             self.assertLessEqual(_x_weighted_len(post["post_text"]), 280)
+
+    def test_instagram_caption_keeps_paragraph_breaks(self):
+        fitted = _fit_text("アメリカで検索急上昇\n\n使う場面を確認", "instagram", "")
+        self.assertIn("\n\n", fitted)
+        self.assertTrue(fitted.endswith("広告を含みます。"))
 
     def test_dry_run_does_not_mark_published(self):
         with tempfile.TemporaryDirectory() as tmp:

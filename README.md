@@ -66,14 +66,16 @@ python3 -m trend_commerce social-queue
 python3 -m trend_commerce social-approve --all
 python3 -m trend_commerce social-dispatch
 
-# 日本・米国・韓国の話題と楽天売れ筋を照合し、X/Instagram候補とサイトを更新
+# 日本・アメリカ・韓国・イギリスの検索急上昇と楽天売れ筋を照合し、X/Instagram候補とサイトを更新
 python3 -m trend_commerce trend-screen \
-  --country JP --country US --country KR \
+  --country JP --country US --country KR --country GB \
   --max-items 6 --approve --build-site
 
 # ASP売上CSVを重複なしで取り込む
 python3 -m trend_commerce import-conversions --file data/conversions_template.csv
 ```
+
+トレンド表示は根拠別に「日本で検索急上昇」「日本のニュースで注目」「アメリカで検索急上昇」などと明記します。Google Trendsだけを根拠に「SNSでバズ」とは表現しません。
 
 ## 安全設計
 

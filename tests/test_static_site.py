@@ -42,6 +42,7 @@ class StaticSiteTest(unittest.TestCase):
             self.assertTrue(health.exists())
             self.assertTrue(trend_cosmetics.exists())
             self.assertFalse((root / "output" / "site" / "category-beauty-fitness.html").exists())
+            self.assertNotIn("公開中のガイド", beauty.read_text(encoding="utf-8"))
             self.assertIn("charging-power-items-comparison.html", article.read_text(encoding="utf-8"))
             self.assertFalse(click_report.exists())
             self.assertNotIn("クリック分析", index.read_text(encoding="utf-8"))

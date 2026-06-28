@@ -89,7 +89,11 @@ def _fit_text(text: str, platform: str, target_url: str) -> str:
     if platform in {"x", "threads"}:
         suffix += "\n%s" % target_url
     limit = PLATFORM_LIMITS[platform]
-    clean = " ".join(text.split())
+    if platform == "instagram":
+        clean = re.sub(r"[^\S\n]+", " ", text)
+        clean = re.sub(r"\n{3,}", "\n\n", clean).strip()
+    else:
+        clean = " ".join(text.split())
     if _platform_len(clean + suffix, platform) > limit:
         allowed = []
         for char in clean:

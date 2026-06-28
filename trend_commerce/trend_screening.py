@@ -25,8 +25,9 @@ TRENDS_URL = "https://trends.google.com/trending/rss?geo=%s"
 TRENDS_NAMESPACE = {"ht": "https://trends.google.com/trending/rss"}
 COUNTRIES = {
     "JP": "日本",
-    "US": "米国",
+    "US": "アメリカ",
     "KR": "韓国",
+    "GB": "イギリス",
 }
 BLOCKED_NEWS_TERMS = {
     "殺害", "死亡", "逮捕", "虐待", "性被害", "被害者", "被疑者", "容疑者",
@@ -63,15 +64,16 @@ class TrendObservation:
 
     @property
     def evidence_text(self) -> str:
+        market = _market_label(self.country_code, self.country_name, self.source_name)
         if self.source_name == "Google News":
-            return "%sのGoogleニュースで「%s」を確認。%sが報道" % (
-                self.country_name,
+            return "【%s】Googleニュースで「%s」を確認。%sが報道" % (
+                market,
                 _shorten(self.news_title or self.topic, 58),
                 self.news_source or "関連メディア",
             )
         traffic = "（検索規模 %s）" % self.approx_traffic if self.approx_traffic else ""
-        lead = "%sのGoogleトレンドで「%s」が急上昇%s" % (
-            self.country_name, self.topic, traffic,
+        lead = "【%s】Googleトレンドで「%s」が急上昇%s" % (
+            market, self.topic, traffic,
         )
         if self.news_title:
             return "%s。%sが「%s」と報道" % (
@@ -98,6 +100,18 @@ class TrendOpportunity:
     @property
     def topic(self) -> str:
         return self.observation.topic if self.observation else "楽天市場の売れ筋"
+
+    @property
+    def trend_scope(self) -> str:
+        if not self.observation:
+            return "japan_sales"
+        return "japan_now" if self.observation.country_code == "JP" else "overseas_watch"
+
+    @property
+    def market_label(self) -> str:
+        if not self.observation:
+            return "日本で売れ筋"
+        return _market_label(self.observation.country_code, self.country_name, self.observation.source_name)
 
 
 def load_trend_rules(path: Optional[Path] = None) -> List[TrendRule]:
@@ -194,6 +208,10 @@ def _collect_rule_news(rule: TrendRule) -> Tuple[List[TrendObservation], List[st
         if not raw_title or not link:
             continue
         title = raw_title.rsplit(" - ", 1)[0].strip()
+        normalized_title = normalize_text(title)
+        evidence_terms = rule.product_terms + rule.trigger_terms
+        if not any(normalize_text(term) in normalized_title for term in evidence_terms if term):
+            continue
         fingerprint = stable_hash("google-news", rule.rule_id, title, link)
         observations.append(
             TrendObservation(
@@ -228,7 +246,7 @@ def collect_product_news(rules: Sequence[TrendRule]) -> Tuple[List[TrendObservat
 
 def screen_trend_opportunities(
     settings: Settings,
-    countries: Sequence[str] = ("JP", "US", "KR"),
+    countries: Sequence[str] = ("JP", "US", "KR", "GB"),
     max_items: int = 6,
     approve: bool = False,
     enqueue: bool = True,
@@ -258,12 +276,15 @@ def screen_trend_opportunities(
     matched: List[TrendOpportunity] = []
     for observation in safe_observations:
         text = normalize_text("%s %s" % (observation.topic, observation.news_title))
+        trigger_text = normalize_text(
+            observation.topic if observation.source_name == "Google Trends" else (observation.news_title or observation.topic)
+        )
         for rule in rules:
             if observation.rule_hint and observation.rule_hint != rule.rule_id:
                 continue
             if _observation_rule_excluded(text, rule.rule_id):
                 continue
-            triggers = [term for term in rule.trigger_terms if normalize_text(term) in text]
+            triggers = [term for term in rule.trigger_terms if normalize_text(term) in trigger_text]
             if not triggers and not observation.rule_hint:
                 continue
             if observation.rule_hint and not triggers:
@@ -272,12 +293,14 @@ def screen_trend_opportunities(
                 ranking_cache.get(rule.genre_id, []), rule, focus_text=text,
             )
             if product is None:
+                product = _fallback_active_product(rule)
+            if product is None:
                 continue
             traffic_score = min(20, int(math.log10(_traffic_number(observation.approx_traffic) + 1) * 6))
             news_score = 16 if observation.news_title else 0
             score = min(100, 48 + traffic_score + news_score + min(12, len(triggers) * 4))
             person_note = _person_note(observation)
-            evidence = "%s。%s。ニュース掲載品と楽天候補は同一商品とは限らず、用途が近い売れ筋として掲載" % (
+            evidence = "%s。%s。ニュース掲載品と商品候補は同一商品とは限らず、用途が近い販売中商品として掲載" % (
                 observation.evidence_text,
                 _ranking_label(product, rule),
             )
@@ -291,9 +314,8 @@ def screen_trend_opportunities(
                     score=score,
                     why_trending=evidence,
                     evidence_label=(
-                        "Google Trends＋楽天リアルタイムランキング"
-                        if observation.source_name == "Google Trends"
-                        else "Googleニュース＋楽天リアルタイムランキング"
+                        ("Google Trends" if observation.source_name == "Google Trends" else "Googleニュース")
+                        + ("＋楽天リアルタイムランキング" if product.rank else "＋日本で販売中の商品")
                     ),
                     person_note=person_note,
                 )
@@ -382,7 +404,7 @@ def enqueue_latest_opportunities(
             observation = TrendObservation(
                 fingerprint=stable_hash("cached-observation", row.get("fingerprint", "")),
                 source_name=source_name,
-                country_code="JP",
+                country_code=row.get("country_code") or _country_code_from_name(row.get("country_name", "日本")),
                 country_name=row.get("country_name", "日本"),
                 topic=row.get("topic", ""),
                 approx_traffic=row.get("approx_traffic", ""),
@@ -509,7 +531,12 @@ def _enqueue_opportunity(conn, settings: Settings, item: TrendOpportunity, appro
             """,
             (
                 slug, item.topic, item.why_trending, item.rule.category, item.score,
-                json.dumps({"country": item.country_name, "evidence": item.evidence_label}, ensure_ascii=False),
+                json.dumps({
+                    "country": item.country_name,
+                    "trend_scope": item.trend_scope,
+                    "market_label": item.market_label,
+                    "evidence": item.evidence_label,
+                }, ensure_ascii=False),
             ),
         )
         event_id = int(cursor.lastrowid)
@@ -587,50 +614,50 @@ def _x_post(item: TrendOpportunity) -> str:
     if item.observation:
         source = item.observation.news_source or item.observation.source_name or "関連メディア"
         if item.observation.source_name == "Google Trends":
-            lead = "【%sで急上昇】%s。%sが報道。" % (
-                item.country_name, _shorten(item.topic, 18), _shorten(source, 10),
+            lead = "【%s】%s。%sが報道。" % (
+                item.market_label, _shorten(item.topic, 18), _shorten(source, 10),
             )
         else:
-            lead = "【%sで注目】%sが「%s」を掲載。" % (
-                item.country_name, _shorten(source, 10), _shorten(item.topic, 18),
+            lead = "【%s】%sが「%s」を掲載。" % (
+                item.market_label, _shorten(source, 10), _shorten(item.topic, 18),
             )
     else:
         lead = "【日本で売れ筋】楽天リアルタイムランキングを確認。"
     product = _shorten(item.product.name, 16)
-    rank = "%s位" % item.product.rank if item.product.rank else "上位"
+    product_status = "楽天%s位" % item.product.rank if item.product.rank else "日本で販売中・レビュー確認済み"
     note = " 人物の愛用品を示すものではありません。" if item.person_note else ""
-    return "%s 関連売れ筋は楽天%s「%s」。%s%s 他の商品もくらメモへ。" % (
-        lead, rank, product, "掲載品と同一とは限りません。", note,
+    return "%s 関連候補は%s「%s」。%s%s 他の商品もくらメモへ。" % (
+        lead, product_status, product, "掲載品と同一とは限りません。", note,
     )
 
 
 def _instagram_caption(item: TrendOpportunity) -> str:
-    rank = "%s位" % item.product.rank if item.product.rank else "上位"
+    product_status = "楽天リアルタイムランキング%s位" % item.product.rank if item.product.rank else "日本で販売中・レビュー確認済み"
     source = item.observation.news_source if item.observation else "楽天市場"
     details = item.why_trending
     note = "\n\n%s" % item.person_note if item.person_note else ""
     return (
-        "【%sで注目】%s\n\n%s\n\n"
+        "【%s】%s\n\n%s\n\n"
         "こんな時に：%s\n"
         "向いている人：%s\n"
-        "関連カテゴリの候補：楽天リアルタイムランキング%s「%s」\n"
+        "関連カテゴリの候補：%s「%s」\n"
         "※ニュース掲載品と同一商品とは限りません。\n\n"
         "ほかにも今売れている商品を用途別にまとめています。プロフィールのリンクから確認できます。"
         "%s\n\n情報源：%s"
     ) % (
-        item.country_name, item.topic, details, item.rule.context, item.rule.audience,
-        rank, _shorten(item.product.name, 70), note, source,
+        item.market_label, item.topic, details, item.rule.context, item.rule.audience,
+        product_status, _shorten(item.product.name, 70), note, source,
     )
 
 
 def _instagram_slides(item: TrendOpportunity) -> List[str]:
-    rank = "%s位" % item.product.rank if item.product.rank else "上位"
+    product_status = "楽天リアルタイムランキング%s位" % item.product.rank if item.product.rank else "日本で販売中・レビュー確認済み"
     source = item.observation.news_source if item.observation else "楽天市場"
     return [
-        "%sでいま注目\n%s" % (item.country_name, item.topic),
+        "%s\n%s" % (item.market_label, item.topic),
         "なぜ話題？\n%s" % _shorten(item.why_trending, 95),
         "こんな時に使える\n%s" % item.rule.context,
-        "今売れている候補\n楽天リアルタイムランキング%s" % rank,
+        "日本で確認できる候補\n%s" % product_status,
         "%s\n%s" % (_shorten(item.product.name, 58), item.rule.audience),
         "選ぶ前に\n価格・レビュー・対応条件を確認",
         "ほかの売れ筋も\nくらメモで用途別に確認\n情報源：%s" % source,
@@ -650,7 +677,7 @@ def _recent_stored_rows(
         rows = conn.execute(
             """
             SELECT t.*, t.created_at AS checked_at,
-                   o.approx_traffic, o.news_title, o.news_url, o.news_source,
+                   o.country_code, o.approx_traffic, o.news_title, o.news_url, o.news_source,
                    r.rank, r.genre_name, r.item_code, r.item_name, r.price,
                    r.affiliate_url, r.item_url, r.image_url, r.review_count, r.review_average
             FROM trend_opportunities t
@@ -669,13 +696,23 @@ def _recent_stored_rows(
         if not rule or rule_id in used or not row.get("item_name"):
             continue
         used.add(rule_id)
+        country_code = str(row.get("country_code") or _country_code_from_name(str(row.get("country_name", "日本"))))
+        source_name = "Google Trends" if "Google Trends" in str(row.get("evidence_label", "")) else "Google News"
+        display_country = COUNTRIES.get(country_code, str(row.get("country_name", "海外")))
+        market_label = _market_label(country_code, display_country, source_name)
+        why_trending = str(row.get("why_trending", "")).replace("米国", "アメリカ").replace("英国", "イギリス")
+        if country_code != "JP" and why_trending and not why_trending.startswith("【"):
+            why_trending = "【%s】%s" % (market_label, why_trending)
         result.append({
             "fingerprint": row.get("fingerprint", ""), "rule_id": rule_id,
             "category": row.get("category", ""), "page_slug": row.get("page_slug", ""),
-            "country_name": row.get("country_name", "日本"), "topic": row.get("topic", ""),
+            "country_code": country_code,
+            "country_name": display_country, "topic": row.get("topic", ""),
+            "trend_scope": "japan_now" if country_code == "JP" else "overseas_watch",
+            "market_label": market_label,
             "approx_traffic": row.get("approx_traffic", ""), "news_title": row.get("news_title", ""),
             "news_url": row.get("news_url", ""), "news_source": row.get("news_source", ""),
-            "why_trending": row.get("why_trending", ""), "evidence_label": row.get("evidence_label", ""),
+            "why_trending": why_trending, "evidence_label": row.get("evidence_label", ""),
             "audience": row.get("audience", rule.audience), "context": rule.context,
             "rank": row.get("rank", 0), "genre_name": row.get("genre_name", rule.genre_name),
             "item_code": row.get("item_code", ""), "item_name": row.get("item_name", ""),
@@ -697,7 +734,7 @@ def _write_opportunities_csv(
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fields = [
-        "fingerprint", "rule_id", "category", "page_slug", "country_name", "topic",
+        "fingerprint", "rule_id", "category", "page_slug", "country_code", "country_name", "trend_scope", "market_label", "topic",
         "approx_traffic", "news_title", "news_url", "news_source", "why_trending",
         "evidence_label", "audience", "context", "rank", "genre_name", "item_code",
         "item_name", "price", "affiliate_url", "item_url", "image_url", "review_count",
@@ -719,7 +756,10 @@ def _opportunity_dict(item: TrendOpportunity) -> Dict[str, object]:
         "rule_id": item.rule.rule_id,
         "category": item.rule.category,
         "page_slug": item.rule.page_slug,
+        "country_code": observation.country_code if observation else "JP",
         "country_name": item.country_name,
+        "trend_scope": item.trend_scope,
+        "market_label": item.market_label,
         "topic": item.topic,
         "approx_traffic": observation.approx_traffic if observation else "",
         "news_title": observation.news_title if observation else "",
@@ -764,13 +804,57 @@ def _best_ranked_product(
             continue
         if product.review_count and product.review_count < 8:
             continue
-        if product.review_average and product.review_average < 3.7:
+        if product.review_average and product.review_average < 4.0:
             continue
         quality = hits * 20 + max(0, 35 - product.rank)
         quality += min(15, int(math.log10(product.review_count + 1) * 5))
         candidates.append((quality, product))
     candidates.sort(key=lambda item: (-item[0], item[1].rank, -item[1].review_count))
     return candidates[0][1] if candidates else None
+
+
+def _fallback_active_product(rule: TrendRule) -> Optional[RakutenProduct]:
+    """Use an already quality-gated Japanese offer when ranking API is unavailable."""
+    map_path = ROOT / "data" / "comparison_product_map.csv"
+    offers_path = ROOT / "data" / "offers.csv"
+    assets_path = ROOT / "data" / "offer_assets.csv"
+    if not map_path.exists() or not offers_path.exists() or not assets_path.exists():
+        return None
+    with map_path.open(encoding="utf-8-sig", newline="") as handle:
+        offer_ids = [
+            row.get("offer_candidate_id", "") for row in csv.DictReader(handle)
+            if row.get("page_slug") == rule.page_slug
+        ]
+    with offers_path.open(encoding="utf-8-sig", newline="") as handle:
+        offers = {row.get("offer_id", ""): row for row in csv.DictReader(handle)}
+    with assets_path.open(encoding="utf-8-sig", newline="") as handle:
+        assets = {row.get("offer_id", ""): row for row in csv.DictReader(handle)}
+    for offer_id in offer_ids:
+        offer = offers.get(offer_id, {})
+        asset = assets.get(offer_id, {})
+        review_count = int(float(asset.get("review_count") or 0))
+        review_average = float(asset.get("review_average") or 0)
+        if (
+            offer.get("status") != "active" or not offer.get("affiliate_url")
+            or not asset.get("image_url") or review_count < 20 or review_average < 4.0
+        ):
+            continue
+        price = int(float(asset.get("min_price") or 0))
+        return RakutenProduct(
+            product_id=offer_id,
+            name=offer.get("name", offer_id),
+            min_price=price,
+            max_price=price,
+            product_url=offer.get("landing_url", ""),
+            affiliate_url=offer.get("affiliate_url", ""),
+            image_url=asset.get("image_url", ""),
+            review_count=review_count,
+            review_average=review_average,
+            availability=1,
+            rank=0,
+            genre_id=rule.genre_id,
+        )
+    return None
 
 
 def _ranking_product_excluded(name: str, rule_id: str) -> bool:
@@ -797,21 +881,50 @@ def _deduplicate_opportunities(items: Sequence[TrendOpportunity], limit: int) ->
     result: List[TrendOpportunity] = []
     used_products = set()
     used_rules = set()
-    for item in items:
+
+    def add(item: TrendOpportunity) -> bool:
         product_key = item.product.product_id or item.product.affiliate_url
         if product_key in used_products or item.rule.rule_id in used_rules:
-            continue
+            return False
         used_products.add(product_key)
         used_rules.add(item.rule.rule_id)
         result.append(item)
+        return True
+
+    # 海外の検索トレンドと日本の現在を別レーンで最低1件ずつ確保する。
+    for wanted in ("overseas_watch", "japan_now"):
+        for item in items:
+            if item.trend_scope == wanted and add(item):
+                break
+        if len(result) >= max(1, limit):
+            return result
+    for item in items:
+        add(item)
         if len(result) >= max(1, limit):
             break
     return result
 
 
+def _market_label(country_code: str, country_name: str, source_name: str = "") -> str:
+    country = country_name or COUNTRIES.get(country_code, "海外")
+    if source_name == "Google Trends":
+        return "%sで検索急上昇" % country
+    if source_name == "Google News":
+        return "%sのニュースで注目" % country
+    if country_code == "JP" or country == "日本":
+        return "日本で注目"
+    return "%sで注目" % country
+
+
+def _country_code_from_name(country_name: str) -> str:
+    aliases = {"米国": "US", "アメリカ": "US", "韓国": "KR", "英国": "GB", "イギリス": "GB", "日本": "JP"}
+    return aliases.get(country_name, "OTHER")
+
+
 def _ranking_label(product: RakutenProduct, rule: TrendRule) -> str:
-    rank = "%s位" % product.rank if product.rank else "上位"
-    return "楽天市場「%s」リアルタイムランキング%sの候補" % (rule.genre_name, rank)
+    if not product.rank:
+        return "日本で販売中・レビュー確認済みの関連候補"
+    return "楽天市場「%s」リアルタイムランキング%s位の候補" % (rule.genre_name, product.rank)
 
 
 def _blocked_observation(item: TrendObservation) -> bool:
@@ -830,7 +943,7 @@ def _person_note(item: TrendObservation) -> str:
 def _target_url(settings: Settings, page_slug: str) -> str:
     if settings.site_base_url:
         return "%s/%s.html#trend-evidence" % (settings.site_base_url, page_slug)
-    return "http://127.0.0.1:8766/%s.html#trend-evidence" % page_slug
+    return "http://127.0.0.1:8080/%s/#trend-evidence" % page_slug
 
 
 def _traffic_number(value: str) -> int:
