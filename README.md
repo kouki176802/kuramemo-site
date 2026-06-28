@@ -8,6 +8,15 @@
 
 ローカルWordPress、専用テーマ、REST API下書き投稿を用意しています。Docker Desktop導入後の手順は [docs/LOCAL_WORDPRESS.md](docs/LOCAL_WORDPRESS.md) を参照してください。外部公開はせず、初期状態では `127.0.0.1` 限定・`noindex` です。
 
+生成済み比較サイトをWordPressへ重複なく同期:
+
+```bash
+python3 -m trend_commerce build-site
+python3 -m trend_commerce wordpress-sync --site-dir output/site --status publish
+```
+
+ローカルでは `publish` にしても強制 `noindex` のため外部公開されません。再実行時は同じスラッグを更新し、ページを増殖させません。
+
 ## すぐ試す
 
 ```bash

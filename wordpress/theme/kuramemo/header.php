@@ -13,12 +13,10 @@
   </a>
   <nav aria-label="主要カテゴリ">
     <a href="<?php echo esc_url(home_url('/')); ?>" <?php if (is_front_page()) echo 'aria-current="page"'; ?>><span>トップ</span></a>
-    <?php foreach (kuramemo_categories() as $label) :
-      $category = get_category_by_slug(sanitize_title($label));
-      $url = $category ? get_category_link($category) : home_url('/?s=' . rawurlencode($label));
-    ?>
-      <a href="<?php echo esc_url($url); ?>"><span><?php echo esc_html($label); ?></span></a>
+    <?php foreach (kuramemo_nav_items() as $label => $slug) : ?>
+      <a href="<?php echo esc_url(home_url('/' . $slug . '/')); ?>" <?php if (is_page($slug)) echo 'aria-current="page"'; ?>><span><?php echo esc_html($label); ?></span></a>
     <?php endforeach; ?>
+    <a href="<?php echo esc_url(home_url('/advertising-policy/')); ?>" <?php if (is_page('advertising-policy')) echo 'aria-current="page"'; ?>><span>広告方針</span></a>
   </nav>
 </header>
 <main>

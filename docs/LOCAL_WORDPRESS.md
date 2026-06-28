@@ -39,6 +39,20 @@ python3 -m trend_commerce wordpress-draft --file output/drafts/記事.md
 
 投稿先は必ず `draft` です。WordPress管理画面で事実・広告表記・商品リンクを確認して公開します。
 
+## 比較サイト全体を同期
+
+```bash
+python3 -m trend_commerce build-site
+python3 -m trend_commerce wordpress-sync --site-dir output/site --status publish
+```
+
+- トップはテーマが `output/site/index.html` の本文を表示
+- 固定・カテゴリ・比較・入口記事はWordPress固定ページへupsert
+- `.html` の内部リンクはWordPressのパーマリンクへ変換
+- 商品画像、広告属性、クリック計測を維持
+- 外部URLは書き換えない
+- ローカル環境は公開状態でも強制 `noindex`
+
 ## 日常操作
 
 起動:

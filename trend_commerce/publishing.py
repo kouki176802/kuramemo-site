@@ -7,6 +7,7 @@ import json
 import os
 import re
 import urllib.request
+import urllib.parse
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -195,3 +196,58 @@ class WordPressPublisher:
             non_purchase_option="", urgency_source="", evidence_urls=[],
         )
         return self.create_draft(bundle)
+
+    def upsert_page(self, *, slug: str, title: str, excerpt: str, status: str = "publish") -> Dict[str, object]:
+        """Create or update a generated-site route without creating duplicates."""
+        existing = self._request(
+            "/wp-json/wp/v2/pages?slug=%s&context=edit&status=any" % urllib.parse.quote(slug)
+        )
+        payload: Dict[str, object] = {
+            "slug": slug,
+            "title": title,
+            "excerpt": excerpt,
+            "content": "<!-- くらメモBOT: output/site の生成済みページをテーマが表示します -->",
+            "status": status,
+        }
+        if isinstance(existing, list) and existing:
+            return self._request("/wp-json/wp/v2/pages/%s" % existing[0]["id"], payload)
+        return self._request("/wp-json/wp/v2/pages", payload)
+
+    def sync_generated_site(self, site_dir: Path, status: str = "publish") -> Dict[str, object]:
+        """Register every generated HTML file as a WordPress page route.
+
+        The front page stays theme-driven; all other files are upserted by slug.
+        Local safety settings keep these published routes noindex until deployment.
+        """
+        pages = discover_generated_pages(site_dir)
+        synced: List[Dict[str, object]] = []
+        for page in pages:
+            if page["slug"] == "index":
+                continue
+            result = self.upsert_page(
+                slug=page["slug"], title=page["title"], excerpt=page["description"], status=status,
+            )
+            synced.append({
+                "id": result.get("id"), "slug": page["slug"], "status": result.get("status"),
+                "link": result.get("link", ""),
+            })
+        return {"count": len(synced), "status": status, "pages": synced}
+
+
+def discover_generated_pages(site_dir: Path) -> List[Dict[str, str]]:
+    pages: List[Dict[str, str]] = []
+    for path in sorted(site_dir.glob("*.html")):
+        document = path.read_text(encoding="utf-8")
+        title_match = re.search(r"<title>(.*?)</title>", document, re.IGNORECASE | re.DOTALL)
+        description_match = re.search(
+            r'<meta\s+name="description"\s+content="([^"]*)">', document, re.IGNORECASE,
+        )
+        title = html.unescape(re.sub(r"\s+", " ", title_match.group(1)).strip()) if title_match else path.stem
+        if title.endswith(" | くらメモ"):
+            title = title[:-7]
+        pages.append({
+            "slug": "index" if path.name == "index.html" else path.stem,
+            "title": title,
+            "description": html.unescape(description_match.group(1)) if description_match else title,
+        })
+    return pages

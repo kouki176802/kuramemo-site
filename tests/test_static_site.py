@@ -32,6 +32,7 @@ class StaticSiteTest(unittest.TestCase):
             beauty = root / "output" / "site" / "category-beauty.html"
             fitness = root / "output" / "site" / "category-fitness.html"
             health = root / "output" / "site" / "category-health.html"
+            trend_cosmetics = root / "output" / "site" / "trend-cosmetics-comparison.html"
             click_report = root / "output" / "site" / "click-report.html"
             self.assertTrue(index.exists())
             self.assertTrue(heat.exists())
@@ -39,6 +40,7 @@ class StaticSiteTest(unittest.TestCase):
             self.assertTrue(beauty.exists())
             self.assertTrue(fitness.exists())
             self.assertTrue(health.exists())
+            self.assertTrue(trend_cosmetics.exists())
             self.assertFalse((root / "output" / "site" / "category-beauty-fitness.html").exists())
             self.assertIn("charging-power-items-comparison.html", article.read_text(encoding="utf-8"))
             self.assertFalse(click_report.exists())

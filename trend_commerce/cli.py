@@ -409,6 +409,11 @@ def _wordpress_draft(args) -> None:
     }, ensure_ascii=False, indent=2))
 
 
+def _wordpress_sync(args) -> None:
+    result = WordPressPublisher().sync_generated_site(Path(args.site_dir), status=args.status)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="trend-commerce", description="AIトレンドコマースBOT")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -577,6 +582,9 @@ def build_parser() -> argparse.ArgumentParser:
     wordpress_draft.add_argument("--title", default="")
     wordpress_draft.add_argument("--slug", default="")
     wordpress_draft.add_argument("--excerpt", default="")
+    wordpress_sync = sub.add_parser("wordpress-sync", help="生成済みサイトをWordPress固定ページへ同期")
+    wordpress_sync.add_argument("--site-dir", default="output/site")
+    wordpress_sync.add_argument("--status", choices=["draft", "publish"], default="publish")
     return parser
 
 
@@ -619,5 +627,6 @@ def main() -> None:
         "trend-enqueue-latest": lambda: _trend_enqueue_latest(args),
         "wordpress-check": lambda: _wordpress_check(),
         "wordpress-draft": lambda: _wordpress_draft(args),
+        "wordpress-sync": lambda: _wordpress_sync(args),
     }
     handlers[args.command]()

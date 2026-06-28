@@ -7,6 +7,8 @@
 .wp-entry-content table { width:100%; border-collapse:collapse; overflow-x:auto; }
 .wp-entry-content th, .wp-entry-content td { padding:12px; border:1px solid #ded8cc; text-align:left; }
 .wp-entry-content blockquote { margin:24px 0; padding:16px 20px; border-left:4px solid #3b82f6; background:#eff6ff; }
+.offer-card .offer-name { font-family:var(--font-sans, sans-serif); font-size:clamp(15px, 1.25vw, 18px); line-height:1.5; overflow-wrap:anywhere; }
+.offer-card .button { width:100%; text-align:center; }
 @media (max-width:700px) {
   .wp-article { margin:12px; padding:18px; }
   .wp-article h1 { font-size:30px; white-space:normal; word-break:auto-phrase; }
@@ -14,4 +16,10 @@
   .wp-entry-content h3 { font-size:21px; word-break:auto-phrase; }
   .wp-entry-content { font-size:15px; line-height:1.8; }
   .wp-entry-content table { display:block; white-space:nowrap; }
+  .site-header nav { scrollbar-width:none; }
+  .site-header nav::-webkit-scrollbar { display:none; }
+  .comparison-hero h1, .category-hero h1 { word-break:auto-phrase; overflow-wrap:normal; }
+  .comparison-title-sub, .category-comparison-card h2, .offer-name, .category-product-card h3 { word-break:auto-phrase; overflow-wrap:anywhere; }
+  .offer-grid, .category-product-grid { grid-template-columns:1fr; }
+  .button, .category-product-actions .button { min-height:48px; display:inline-flex; align-items:center; justify-content:center; }
 }

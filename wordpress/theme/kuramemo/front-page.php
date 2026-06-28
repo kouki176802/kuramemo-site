@@ -1,4 +1,11 @@
-<?php get_header(); ?>
+<?php get_header();
+$generated = kuramemo_generated_main_html('index');
+if ($generated) {
+    echo $generated; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted local artifact
+    get_footer();
+    return;
+}
+?>
 <section class="hero">
   <div class="hero-copy">
     <div class="eyebrow">SNS・ニュースの注目商品</div>
