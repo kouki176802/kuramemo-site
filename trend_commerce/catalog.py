@@ -66,7 +66,7 @@ def upsert_offer_csv(values: Dict[str, str], path: Optional[Path] = None) -> Non
     if not replaced:
         rows.append(normalized)
     with csv_path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 

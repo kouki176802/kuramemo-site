@@ -34,6 +34,10 @@ BLOCKED_NEWS_TERMS = {
     "殺害", "死亡", "逮捕", "虐待", "性被害", "被害者", "被疑者", "容疑者",
     "がん公表", "闘病", "訃報", "自殺", "暴行", "誘拐",
 }
+AMBIGUOUS_NEWS_PRODUCT_TERMS = {
+    # 「チューブ入り食品」のような一般語を家トレ商品として拾わない。
+    "fitness": {"チューブ"},
+}
 
 
 @dataclass(frozen=True)
@@ -210,8 +214,7 @@ def _collect_rule_news(rule: TrendRule) -> Tuple[List[TrendObservation], List[st
             continue
         title = raw_title.rsplit(" - ", 1)[0].strip()
         normalized_title = normalize_text(title)
-        evidence_terms = rule.product_terms + rule.trigger_terms
-        if not any(normalize_text(term) in normalized_title for term in evidence_terms if term):
+        if not _news_terms_match_rule(normalized_title, rule):
             continue
         fingerprint = stable_hash("google-news", rule.rule_id, title, link)
         observations.append(
@@ -285,7 +288,7 @@ def screen_trend_opportunities(
                 continue
             if _observation_rule_excluded(text, rule.rule_id):
                 continue
-            triggers = [term for term in rule.trigger_terms if normalize_text(term) in trigger_text]
+            triggers = _matching_terms(rule.trigger_terms, trigger_text)
             if not triggers and not observation.rule_hint:
                 continue
             if observation.rule_hint and not triggers:
@@ -763,7 +766,7 @@ def _write_opportunities_csv(
         "review_average", "score", "person_note", "checked_at",
     ]
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for item in items:
             writer.writerow(_opportunity_dict(item))
@@ -888,6 +891,31 @@ def _ranking_product_excluded(name: str, rule_id: str) -> bool:
         "travel": ["ゴルフ", "キャンプテント", "釣り"],
     }
     return any(term in name for term in exclusions.get(rule_id, []))
+
+
+def _matching_terms(terms: Iterable[str], normalized_text: str) -> List[str]:
+    matched: List[str] = []
+    for term in terms:
+        normalized = normalize_text(term)
+        if not normalized:
+            continue
+        if normalized.isascii() and normalized.replace("-", "").isalnum():
+            if re.search(r"(?<![a-z0-9])%s(?![a-z0-9])" % re.escape(normalized), normalized_text):
+                matched.append(term)
+        elif normalized in normalized_text:
+            matched.append(term)
+    return matched
+
+
+def _news_terms_match_rule(normalized_title: str, rule: TrendRule) -> bool:
+    trigger_matches = _matching_terms(rule.trigger_terms, normalized_title)
+    product_matches = _matching_terms(rule.product_terms, normalized_title)
+    if trigger_matches:
+        return True
+    if not product_matches:
+        return False
+    ambiguous = AMBIGUOUS_NEWS_PRODUCT_TERMS.get(rule.rule_id, set())
+    return any(term not in ambiguous for term in product_matches)
 
 
 def _observation_rule_excluded(text: str, rule_id: str) -> bool:

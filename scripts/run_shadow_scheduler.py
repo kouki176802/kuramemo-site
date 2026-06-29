@@ -113,6 +113,13 @@ def _send_morning_discord() -> None:
     ])
 
 
+def _seconds_until_next_morning(now: datetime, last_sent_date: str) -> float:
+    target = now.replace(hour=7, minute=30, second=0, microsecond=0)
+    if last_sent_date == now.date().isoformat() or now >= target:
+        target += timedelta(days=1)
+    return max(5.0, (target - now).total_seconds())
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--interval-minutes", type=int, default=60)
@@ -163,7 +170,9 @@ def main() -> None:
         if morning_due and last_discord_date != now.date().isoformat():
             _send_morning_discord()
             last_discord_date = now.date().isoformat()
-        time.sleep(max(5, args.interval_minutes) * 60)
+        regular_sleep = max(5, args.interval_minutes) * 60
+        # 1時間周期で起動しても朝便だけは7:30に合わせる。
+        time.sleep(min(regular_sleep, _seconds_until_next_morning(now, last_discord_date)))
 
 
 if __name__ == "__main__":

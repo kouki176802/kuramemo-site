@@ -34,6 +34,14 @@ python3 scripts/run_evals.py
 zsh scripts/run_company_bot.command
 ```
 
+ターミナルを閉じたままバックグラウンド運転する場合:
+
+```bash
+zsh scripts/start_company_bot_background.sh
+```
+
+停止は `zsh scripts/stop_company_bot_background.sh` です。PC再起動後は開始コマンドをもう一度実行します。朝のDiscord便は7時30分に時刻を合わせます。外部SNSの実投稿は、API認証と明示フラグを設定するまで行いません。
+
 サイト表示:
 
 ```bash

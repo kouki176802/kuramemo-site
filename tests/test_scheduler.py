@@ -1,5 +1,6 @@
 import importlib.util
 import unittest
+from datetime import datetime
 from pathlib import Path
 
 
@@ -27,6 +28,15 @@ class SchedulerTest(unittest.TestCase):
         self.assertNotIn("product-ops", joined)
         self.assertNotIn("wordpress-sync", joined)
         self.assertIn("trend_commerce run", joined)
+
+    def test_scheduler_aligns_morning_delivery_to_730(self):
+        now = datetime(2026, 6, 30, 7, 2, 0)
+        self.assertEqual(28 * 60, scheduler._seconds_until_next_morning(now, ""))
+
+    def test_scheduler_moves_to_tomorrow_after_delivery(self):
+        now = datetime(2026, 6, 30, 7, 31, 0)
+        seconds = scheduler._seconds_until_next_morning(now, "2026-06-30")
+        self.assertEqual((23 * 60 + 59) * 60, seconds)
 
 
 if __name__ == "__main__":

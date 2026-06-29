@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import threading
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -101,6 +104,34 @@ class RakutenProductClient:
         self.access_key = os.environ["RAKUTEN_ACCESS_KEY"]
         self.affiliate_id = os.getenv("RAKUTEN_AFFILIATE_ID", "")
         self.referer = os.getenv("RAKUTEN_REFERER", "https://x.com/m0506k")
+        # Rakuten APIs return 429 when ranking, scouting and audits overlap.
+        # Keep one client-wide start interval and retry only transient failures.
+        self.min_request_interval = max(0.0, float(os.getenv("RAKUTEN_REQUEST_INTERVAL", "1.1")))
+        self.max_retries = max(0, int(os.getenv("RAKUTEN_MAX_RETRIES", "2")))
+        self._request_lock = threading.Lock()
+        self._last_request_started = 0.0
+
+    def _fetch_json(self, request: urllib.request.Request, timeout: int) -> Dict[str, Any]:
+        for attempt in range(self.max_retries + 1):
+            with self._request_lock:
+                wait = self.min_request_interval - (time.monotonic() - self._last_request_started)
+                if wait > 0:
+                    time.sleep(wait)
+                self._last_request_started = time.monotonic()
+            try:
+                with urllib.request.urlopen(request, timeout=timeout) as response:
+                    return json.loads(response.read().decode("utf-8"))
+            except urllib.error.HTTPError as error:
+                transient = error.code == 429 or 500 <= error.code < 600
+                if not transient or attempt >= self.max_retries:
+                    raise
+                retry_after = error.headers.get("Retry-After", "") if error.headers else ""
+                try:
+                    delay = float(retry_after)
+                except (TypeError, ValueError):
+                    delay = min(8.0, 1.5 * (2 ** attempt))
+                time.sleep(max(self.min_request_interval, delay))
+        raise RuntimeError("楽天APIの再試行上限に到達しました")
 
     def search(self, keyword: str, limit: int = 10) -> List[RakutenProduct]:
         params = {
@@ -120,8 +151,7 @@ class RakutenProductClient:
                 "Referer": self.referer,
             },
         )
-        with urllib.request.urlopen(request, timeout=30) as response:
-            return parse_products(json.loads(response.read().decode("utf-8")))
+        return parse_products(self._fetch_json(request, timeout=30))
 
     def search_items(self, keyword: str, limit: int = 10, sort: str = "-reviewCount") -> List[RakutenProduct]:
         params = {
@@ -152,8 +182,7 @@ class RakutenProductClient:
                 "Referer": self.referer,
             },
         )
-        with urllib.request.urlopen(request, timeout=30) as response:
-            return parse_items(json.loads(response.read().decode("utf-8")))
+        return parse_items(self._fetch_json(request, timeout=30))
 
     def ranking_items(
         self,
@@ -180,8 +209,7 @@ class RakutenProductClient:
             url,
             headers={"User-Agent": "TrendCommerceBot/0.2", "Referer": self.referer},
         )
-        with urllib.request.urlopen(request, timeout=12) as response:
-            return parse_items(json.loads(response.read().decode("utf-8")))
+        return parse_items(self._fetch_json(request, timeout=12))
 
     def lookup_item(self, item_code: str) -> List[RakutenProduct]:
         """Fetch one currently sold item by Rakuten shop:item itemCode."""
@@ -207,8 +235,7 @@ class RakutenProductClient:
             url,
             headers={"User-Agent": "TrendCommerceBot/0.1", "Referer": self.referer},
         )
-        with urllib.request.urlopen(request, timeout=30) as response:
-            return parse_items(json.loads(response.read().decode("utf-8")))
+        return parse_items(self._fetch_json(request, timeout=30))
 
     def search_shop_items(self, shop_code: str, keyword: str, limit: int = 30) -> List[RakutenProduct]:
         """Search inside one shop so a current URL can be matched safely."""
@@ -237,5 +264,4 @@ class RakutenProductClient:
             url,
             headers={"User-Agent": "TrendCommerceBot/0.1", "Referer": self.referer},
         )
-        with urllib.request.urlopen(request, timeout=30) as response:
-            return parse_items(json.loads(response.read().decode("utf-8")))
+        return parse_items(self._fetch_json(request, timeout=30))

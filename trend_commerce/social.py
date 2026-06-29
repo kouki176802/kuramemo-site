@@ -358,7 +358,9 @@ def export_queue(settings: Settings, path: Path, platform: str = "", only_approv
     path.parent.mkdir(parents=True, exist_ok=True)
     fields = ["id", "platform", "scheduled_at", "post_text", "target_url", "media_json", "approval_status", "status"]
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
+        writer = csv.DictWriter(
+            handle, fieldnames=fields, extrasaction="ignore", lineterminator="\n"
+        )
         writer.writeheader()
         writer.writerows(posts)
     return len(posts)

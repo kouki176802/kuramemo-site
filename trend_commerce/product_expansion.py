@@ -117,7 +117,7 @@ def _normalize_promoted_slot_ids(map_rows: List[Dict[str, str]], settings: Setti
             if row.get("offer_id") in renames:
                 row["offer_id"] = renames[row["offer_id"]]
         with filename.open("w", encoding="utf-8-sig", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=fields)
+            writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
             writer.writeheader()
             writer.writerows(rows)
     with transaction(settings.database_path) as conn:
@@ -152,7 +152,7 @@ def expand_products_from_cache(settings: Settings, target_per_page: int = 8, ref
     if refresh and promoted_ids:
         offer_rows = [row for row in offer_rows if row.get("offer_id") not in promoted_ids]
         with offers_path.open("w", encoding="utf-8-sig", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=offer_fields)
+            writer = csv.DictWriter(handle, fieldnames=offer_fields, lineterminator="\n")
             writer.writeheader()
             writer.writerows(offer_rows)
         asset_path = ROOT / "data" / "offer_assets.csv"
@@ -161,7 +161,7 @@ def expand_products_from_cache(settings: Settings, target_per_page: int = 8, ref
         asset_fields = ["offer_id", "image_url", "shop_name", "min_price", "review_count", "review_average", "score", "updated_at"]
         assets = [row for row in assets if row.get("offer_id") not in promoted_ids]
         with asset_path.open("w", encoding="utf-8-sig", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=asset_fields)
+            writer = csv.DictWriter(handle, fieldnames=asset_fields, lineterminator="\n")
             writer.writeheader()
             writer.writerows(assets)
         with transaction(settings.database_path) as conn:
@@ -244,7 +244,7 @@ def expand_products_from_cache(settings: Settings, target_per_page: int = 8, ref
 
     normalized_ids = _normalize_promoted_slot_ids(map_rows, settings)
     with map_path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=map_fields)
+        writer = csv.DictWriter(handle, fieldnames=map_fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(map_rows)
     import_offers(settings)

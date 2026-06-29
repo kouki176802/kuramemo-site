@@ -80,7 +80,7 @@ def write_affiliate_performance_report(settings: Settings) -> Dict[str, object]:
     csv_path = directory / "product_performance.csv"
     fields = ["offer_id", "name", "category", "page_slug", "page_views", "clicks", "ctr", "conversions", "cvr", "revenue", "epc", "recommendation"]
     with csv_path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     html_rows = "".join(

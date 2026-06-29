@@ -135,7 +135,9 @@ def write_learning_report(settings: Settings) -> Dict[str, object]:
         "score", "decision", "post_text",
     ]
     with target.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
+        writer = csv.DictWriter(
+            handle, fieldnames=fields, extrasaction="ignore", lineterminator="\n"
+        )
         writer.writeheader()
         writer.writerows(rows)
     return {"rows": len(rows), "path": str(target)}

@@ -556,7 +556,7 @@ def write_candidates_csv(candidates: List[ProductCandidate], path: Path) -> None
         "product_url", "affiliate_url", "image_url", "shop_name", "reasons",
     ]
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for candidate in candidates:
             writer.writerow({
@@ -644,6 +644,6 @@ def _upsert_offer_asset_csv(candidate: ProductCandidate) -> None:
     if not replaced:
         rows.append(row)
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)

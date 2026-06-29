@@ -3,7 +3,7 @@ import unittest
 from trend_commerce.rakuten import RakutenProduct, parse_items
 from trend_commerce.trend_screening import (
     TrendObservation, TrendOpportunity, TrendRule, _deduplicate_opportunities,
-    _market_label, _ranking_label, parse_google_trends,
+    _market_label, _news_terms_match_rule, _ranking_label, parse_google_trends,
 )
 
 
@@ -65,6 +65,21 @@ class TrendScreeningTest(unittest.TestCase):
         rule = TrendRule("heat", "季節", "heat", "暑さ", "人", [], [], "1", "家電")
         product = RakutenProduct("fallback", "扇風機", 1000, 1000, "u", "a", "i", review_count=100, review_average=4.5)
         self.assertEqual("日本で販売中・レビュー確認済みの関連候補", _ranking_label(product, rule))
+
+    def test_generic_tube_food_news_is_not_fitness_evidence(self):
+        rule = TrendRule(
+            "fitness", "フィットネス", "home-training", "運動", "人",
+            ["筋トレ", "トレーニング", "fitness"],
+            ["トレーニングマット", "ダンベル", "チューブ", "フォームローラー"],
+            "1", "スポーツ",
+        )
+        self.assertFalse(_news_terms_match_rule("練乳をチューブから飲むヨーグルト発売", rule))
+        self.assertTrue(_news_terms_match_rule("自宅トレーニング用チューブの新商品", rule))
+
+    def test_ascii_trigger_requires_word_boundary(self):
+        rule = TrendRule("pc", "AI", "pc", "作業", "人", ["PC"], ["マウス"], "1", "PC")
+        self.assertFalse(_news_terms_match_rule("space designの新商品", rule))
+        self.assertTrue(_news_terms_match_rule("pc 作業向け新商品", rule))
 
 
 if __name__ == "__main__":

@@ -947,12 +947,16 @@ def _offer_card(row: Dict[str, str], offer: Offer | None, asset: Dict[str, str] 
         network = html.escape(offer.network)
         image = _offer_image(asset or {}, offer.name or title)
         stats = _offer_stats(asset or {})
+        evidence = ""
+        if notes and any(term in row.get("notes", "") for term in ("@cosme", "LIPS", "SNS", "韓国", "アメリカ", "受賞", "話題")):
+            evidence = '<p class="offer-evidence"><span>注目の根拠</span>%s</p>' % notes
         return """
 <article class="offer-card offer-card-active">
   <p class="offer-rank">No.%02d</p>
   %s
   <p class="offer-label">%s</p>
   <p class="offer-name">%s</p>
+  %s
   %s
   <p class="offer-problem">%s</p>
   <p class="offer-points"><span>見るポイント</span>%s</p>
@@ -965,6 +969,7 @@ def _offer_card(row: Dict[str, str], offer: Offer | None, asset: Dict[str, str] 
             title,
             name,
             stats,
+            evidence,
             problem,
             points,
             url,
@@ -1968,6 +1973,8 @@ th { background:#eff6ff; color:#1e3a8a; font-family:var(--mono); font-size:12px;
 .offer-stats { display:flex; flex-wrap:wrap; gap:5px; margin:0 0 8px; }
 .offer-stats span { padding:3px 7px; border-radius:0; background:#f1f1f1; color:#333; border:1px solid rgba(17,17,17,.12); font-family:var(--mono); font-size:11px; font-weight:900; }
 .offer-problem { color:#4b5563; margin:8px 0; }
+.offer-evidence { background:#f3f7ff; border-left:3px solid var(--accent); border-radius:0 10px 10px 0; color:#334155; font-size:13px; line-height:1.65; margin:10px 0; padding:8px 10px; }
+.offer-evidence span { color:var(--accent); display:block; font-family:var(--mono); font-size:11px; font-weight:900; letter-spacing:.08em; margin-bottom:2px; }
 .offer-points { color:var(--muted); font-size:13px; margin:8px 0; }
 .offer-points span { display:block; color:var(--accent); font-family:var(--mono); font-weight:900; margin-bottom:3px; }
 .offer-card-active { border-color:#dec99f; }
