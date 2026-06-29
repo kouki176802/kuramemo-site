@@ -176,7 +176,7 @@ def expand_products_from_cache(settings: Settings, target_per_page: int = 8, ref
 
     pages = sorted({row["page_slug"] for row in map_rows})
     for page_slug in pages:
-        if page_slug == "ai-tools-comparison":
+        if page_slug in {"ai-tools-comparison", "trend-cosmetics-comparison"}:
             continue
         page_rows = [row for row in map_rows if row["page_slug"] == page_slug]
         active_count = sum(row["offer_candidate_id"] in active for row in page_rows)

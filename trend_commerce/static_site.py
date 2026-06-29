@@ -456,7 +456,7 @@ def _category_comparison_card(page: SitePage, rows: List[Dict[str, str]], offers
         and offer.status == "active" and offer.affiliate_url
     ]
     rows = active_rows or rows
-    groups = [row.get("product_group", "") for row in rows if row.get("product_group")]
+    groups = list(dict.fromkeys(row.get("product_group", "") for row in rows if row.get("product_group")))
     points = _unique_comparison_points(rows)
     return """
 <a class="category-comparison-card" href="%s.html">
