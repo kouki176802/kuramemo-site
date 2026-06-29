@@ -87,11 +87,17 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
         if category_body_prefix:
             body = category_body_prefix
         if page.kind == "comparison":
+            active_rows = [
+                row for row in rows
+                if (offer := offers.get(row.get("offer_candidate_id", "")))
+                and offer.status == "active" and offer.affiliate_url
+            ]
+            comparison_rows = active_rows or rows
             body = (
-                render_comparison_intro(page, rows, offers, offer_assets)
-                + render_offer_section(page.slug, rows, offers, offer_assets)
+                render_comparison_intro(page, comparison_rows, offers, offer_assets)
+                + render_offer_section(page.slug, comparison_rows, offers, offer_assets)
                 + render_trend_evidence(page.slug, trend_rows)
-                + render_comparison_axis(rows, offer_assets)
+                + render_comparison_axis(comparison_rows, offer_assets)
                 + body
                 + render_related_guides(page, pages, product_map)
             )
@@ -388,7 +394,7 @@ def render_category_intro(
             comparison_pages[item[0]].title,
         )
     )
-    cards = "\n".join(_category_comparison_card(comparison_pages[slug], rows) for slug, rows in matches)
+    cards = "\n".join(_category_comparison_card(comparison_pages[slug], rows, offers) for slug, rows in matches)
     product_cards = render_category_product_shelf(page.slug, matches, offers, offer_assets)
     article_cards = render_category_articles(page, pages)
     profile = _category_profile(page.title)
@@ -443,7 +449,13 @@ def render_category_articles(page: SitePage, pages: List[SitePage]) -> str:
     return '<section class="category-articles"><div class="section-kicker">選ぶ前の基礎</div><h2>選ぶ前に読む</h2><div>%s</div></section>' % cards
 
 
-def _category_comparison_card(page: SitePage, rows: List[Dict[str, str]]) -> str:
+def _category_comparison_card(page: SitePage, rows: List[Dict[str, str]], offers: Dict[str, Offer]) -> str:
+    active_rows = [
+        row for row in rows
+        if (offer := offers.get(row.get("offer_candidate_id", "")))
+        and offer.status == "active" and offer.affiliate_url
+    ]
+    rows = active_rows or rows
     groups = [row.get("product_group", "") for row in rows if row.get("product_group")]
     points = _unique_comparison_points(rows)
     return """
@@ -469,7 +481,7 @@ def render_category_product_shelf(
     offer_assets: Dict[str, Dict[str, str]],
 ) -> str:
     cards: List[str] = []
-    card_limit = 12 if category_slug == "category-housework-timesaving" else 6
+    card_limit = 12 if category_slug == "category-housework-timesaving" else 8
     for page_slug, rows in matches:
         for row in rows:
             offer_id = row.get("offer_candidate_id", "")

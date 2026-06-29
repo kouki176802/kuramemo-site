@@ -7,11 +7,15 @@
 ## AI会社の日次運転
 
 ```bash
-python3 -m trend_commerce collect
-python3 -m trend_commerce run
-python3 -m trend_commerce social-queue
-python3 -m trend_commerce social-dispatch
-python3 -m trend_commerce report
+zsh scripts/run_company_bot.command
+```
+
+この1本で、国内・海外トレンド収集、商品販売監視、比較ページ再生成、ローカルWordPress同期、SNS A/B案生成、勝ちパターン分析、CEOレポートを接続します。外部SNS投稿は既定で無効です。
+
+1回だけ全処理を確認する場合:
+
+```bash
+python3 scripts/run_shadow_scheduler.py --once
 ```
 
 ### 各部署の実装対応
@@ -19,11 +23,11 @@ python3 -m trend_commerce report
 | 会社部署 | 実装モジュール | 出力 |
 |---|---|---|
 | トレンド情報部 | `collectors.py`, `clustering.py`, `scoring.py` | Opportunity Card相当 |
-| 商品・収益部 | `catalog.py` | 商品候補・マッチ点 |
+| 商品・収益部 | `catalog.py`, `product_operations.py`, `product_expansion.py` | 商品候補・販売監視・8商品補完 |
 | 編集・行動設計部 | `generation.py` | 記事・SNS下書き |
 | 品質・コンプライアンス部 | `compliance.py` | 公開判定 |
 | 配信運用部 | `publishing.py`, `social.py` | WordPress下書き、SNSキュー・投稿 |
-| データ分析部 | `reporting.py` | CEOレポート |
+| データ分析部 | `reporting.py`, `social_optimization.py` | CEOレポート・CTR/滞在/CVR・A/B学習 |
 | AI経営執行室 | `pipeline.py`, `cli.py` | ジョブ統括・監査ログ |
 
 ## CEOレビュー
@@ -68,7 +72,7 @@ python3 -m trend_commerce review --content-id 1 --decision approved --notes "出
 - `paused`: 一時停止
 - `ended`: 終了
 
-現在のサンプルはすべて `research` で、実在リンクを含みません。
+楽天APIで確認済みの掲載枠は `active` とし、販売中・画像・レビュー・アフィリエイトURLを保存します。API障害時は検証済みキャッシュだけを再利用し、未確認商品を数合わせで公開しません。
 
 ## OpenAI APIを後から有効化
 

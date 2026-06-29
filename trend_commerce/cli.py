@@ -16,6 +16,7 @@ from .database import connect, initialize, transaction
 from .pipeline import run_pipeline
 from .product_scout import activate_candidates, best_by_offer, scout_page_products, write_candidates_csv
 from .product_operations import run_product_operations
+from .product_expansion import expand_products_from_cache
 from .publish_check import check_publish_ready
 from .publishing import WordPressPublisher
 from .reporting import report_data, write_ceo_report
@@ -381,6 +382,15 @@ def _product_operations(args) -> None:
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+def _product_expand_cache(args) -> None:
+    settings = load_settings()
+    initialize(settings.database_path)
+    result = expand_products_from_cache(settings, target_per_page=args.target, refresh=args.refresh)
+    if args.build_site:
+        result["site"] = build_static_site(settings, Path(args.site_output))
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
 def _affiliate_metrics_import(args) -> None:
     result = import_affiliate_metrics(load_settings(), Path(args.file), source=args.source)
     print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -594,6 +604,12 @@ def build_parser() -> argparse.ArgumentParser:
     product_ops.add_argument("--delay-seconds", type=float, default=1.1)
     product_ops.add_argument("--limit", type=int, default=0, help="検証用。0は全商品")
 
+    product_expand = sub.add_parser("product-expand-cache", help="検証済み楽天候補から各比較ページの商品数を補完")
+    product_expand.add_argument("--target", type=int, default=8)
+    product_expand.add_argument("--refresh", action="store_true", help="以前のキャッシュ追加枠を再審査して入れ替える")
+    product_expand.add_argument("--build-site", action="store_true")
+    product_expand.add_argument("--site-output", default="output/site")
+
     affiliate_metrics = sub.add_parser("import-affiliate-metrics", help="GA4等の商品別クリック指標CSVを取り込む")
     affiliate_metrics.add_argument("--file", required=True)
     affiliate_metrics.add_argument("--source", default="ga4_csv")
@@ -658,6 +674,7 @@ def main() -> None:
         "rakuten-search": lambda: _rakuten_search(args),
         "product-scout": lambda: _product_scout(args),
         "product-ops": lambda: _product_operations(args),
+        "product-expand-cache": lambda: _product_expand_cache(args),
         "import-affiliate-metrics": lambda: _affiliate_metrics_import(args),
         "affiliate-report": lambda: _affiliate_report(args),
         "trend-screen": lambda: _trend_screen(args),

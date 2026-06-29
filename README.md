@@ -28,6 +28,12 @@ python3 -m unittest discover -s tests -v
 python3 scripts/run_evals.py
 ```
 
+日常運転は次の1本です。PCとDocker Desktopが動いている間、1時間ごとに軽量処理、24時間ごとに全社処理を実行します。外部SNSへは自動投稿しません。
+
+```bash
+zsh scripts/run_company_bot.command
+```
+
 サイト表示:
 
 ```bash
