@@ -26,6 +26,7 @@ from .social import (
     import_manual_social_posts, mark_post_published, reject_post, reschedule_post, retry_post, set_media_urls,
     send_discord_ready_messages,
 )
+from .social_optimization import add_funnel_metric, release_b_variants, write_learning_report
 from .static_site import build_static_site
 from .trend_screening import enqueue_latest_opportunities, screen_trend_opportunities
 
@@ -237,6 +238,25 @@ def _social_metric(args) -> None:
         args.replies, args.reposts, args.saves, args.link_clicks, args.source,
     )
     print("SNS指標を保存しました")
+
+
+def _social_funnel_metric(args) -> None:
+    settings = load_settings()
+    add_funnel_metric(
+        settings, args.post_id, args.measured_at, args.impressions, args.link_clicks,
+        args.landing_sessions, args.engaged_seconds, args.conversions, args.revenue, args.source,
+    )
+    print("SNS→記事→成約指標を保存しました")
+
+
+def _social_learning_report() -> None:
+    result = write_learning_report(load_settings())
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _social_ab_release(args) -> None:
+    count = release_b_variants(load_settings(), minimum_impressions=args.minimum_impressions)
+    print("B案を解放しました: %d件" % count)
 
 
 def _social_set_media(args) -> None:
@@ -508,6 +528,20 @@ def build_parser() -> argparse.ArgumentParser:
     social_metric.add_argument("--link-clicks", type=int, default=0)
     social_metric.add_argument("--source", default="manual")
 
+    funnel_metric = sub.add_parser("social-funnel-metric", help="A/B投稿のCTR・滞在時間・CVRを登録")
+    funnel_metric.add_argument("--post-id", type=int, required=True)
+    funnel_metric.add_argument("--measured-at", required=True)
+    funnel_metric.add_argument("--impressions", type=int, default=0)
+    funnel_metric.add_argument("--link-clicks", type=int, default=0)
+    funnel_metric.add_argument("--landing-sessions", type=int, default=0)
+    funnel_metric.add_argument("--engaged-seconds", type=float, default=0, help="記事滞在秒数の合計")
+    funnel_metric.add_argument("--conversions", type=int, default=0)
+    funnel_metric.add_argument("--revenue", type=float, default=0)
+    funnel_metric.add_argument("--source", default="manual")
+    sub.add_parser("social-learning-report", help="A/Bテストの勝ちフックをCSV出力")
+    ab_release = sub.add_parser("social-ab-release", help="A案の表示数が基準に達した話題のB案を解放")
+    ab_release.add_argument("--minimum-impressions", type=int, default=500)
+
     media = sub.add_parser("social-set-media", help="Instagram投稿へ公開画像URLを設定")
     media.add_argument("--id", type=int, required=True)
     media.add_argument("--url", action="append", required=True)
@@ -613,6 +647,9 @@ def main() -> None:
         "social-discord": lambda: _social_discord(args),
         "social-dispatch": lambda: _social_dispatch(args),
         "social-metric": lambda: _social_metric(args),
+        "social-funnel-metric": lambda: _social_funnel_metric(args),
+        "social-learning-report": lambda: _social_learning_report(),
+        "social-ab-release": lambda: _social_ab_release(args),
         "social-set-media": lambda: _social_set_media(args),
         "social-render": lambda: _social_render(args),
         "build-site": lambda: _build_site(args),

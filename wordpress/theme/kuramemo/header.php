@@ -9,7 +9,7 @@
 <?php wp_body_open(); ?>
 <header class="site-header">
   <a class="brand" href="<?php echo esc_url(home_url('/')); ?>">
-    <span>くらメモ</span><small>買う前チェック</small>
+    <span>くらメモ</span><small>注目商品チェック</small>
   </a>
   <nav aria-label="主要カテゴリ">
     <a href="<?php echo esc_url(home_url('/')); ?>" <?php if (is_front_page()) echo 'aria-current="page"'; ?>><span>トップ</span></a>

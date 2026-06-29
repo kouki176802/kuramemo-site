@@ -1253,14 +1253,14 @@ def render_layout(
 </head>
 <body class="%s">
   <header class="site-header">
-    <a class="brand" href="index.html"><span>くらメモ</span><small>買う前チェック</small></a>
+    <a class="brand" href="index.html"><span>くらメモ</span><small>注目商品チェック</small></a>
     <nav aria-label="主要カテゴリ">%s</nav>
   </header>
   <main>
     %s
   </main>
   <footer>
-    <p>© くらメモ / 買う前チェック</p>
+    <p>© くらメモ / 注目商品チェック</p>
     <p><a href="privacy-policy.html">プライバシーポリシー</a>・<a href="disclaimer.html">免責事項</a>・<a href="editorial-policy.html">編集方針</a></p>
   </footer>
 </body>
@@ -1275,7 +1275,7 @@ def render_layout(
 
 def _meta_description(title: str, slug: str) -> str:
     if slug == "index":
-        return "SNSやニュースで気になった商品を用途・条件・価格で整理する買う前チェックメディア"
+        return "SNSやニュースで注目される商品を用途・条件・価格で整理する注目商品チェックメディア"
     if slug.startswith("category-"):
         return "%sの商品と選び方を用途・価格・レビュー・注意点から整理します" % title
     if slug.endswith("comparison"):

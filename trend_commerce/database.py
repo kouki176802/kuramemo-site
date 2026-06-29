@@ -147,6 +147,33 @@ CREATE TABLE IF NOT EXISTS social_metrics (
     FOREIGN KEY(social_post_id) REFERENCES social_posts(id)
 );
 
+CREATE TABLE IF NOT EXISTS social_experiments (
+    id INTEGER PRIMARY KEY,
+    experiment_key TEXT NOT NULL,
+    social_post_id INTEGER NOT NULL UNIQUE,
+    variant TEXT NOT NULL,
+    hook_type TEXT NOT NULL,
+    promise_text TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'running',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(social_post_id) REFERENCES social_posts(id)
+);
+
+CREATE TABLE IF NOT EXISTS social_funnel_metrics (
+    id INTEGER PRIMARY KEY,
+    social_post_id INTEGER NOT NULL,
+    measured_at TEXT NOT NULL,
+    impressions INTEGER NOT NULL DEFAULT 0,
+    link_clicks INTEGER NOT NULL DEFAULT 0,
+    landing_sessions INTEGER NOT NULL DEFAULT 0,
+    engaged_seconds REAL NOT NULL DEFAULT 0,
+    conversions INTEGER NOT NULL DEFAULT 0,
+    revenue REAL NOT NULL DEFAULT 0,
+    source TEXT NOT NULL DEFAULT 'manual',
+    UNIQUE(social_post_id, measured_at, source),
+    FOREIGN KEY(social_post_id) REFERENCES social_posts(id)
+);
+
 CREATE TABLE IF NOT EXISTS compliance_reports (
     id INTEGER PRIMARY KEY,
     content_id INTEGER NOT NULL,
@@ -325,6 +352,8 @@ CREATE INDEX IF NOT EXISTS idx_events_status_score ON trend_events(status, score
 CREATE INDEX IF NOT EXISTS idx_content_status ON content_items(status);
 CREATE INDEX IF NOT EXISTS idx_social_due ON social_posts(status, approval_status, scheduled_at);
 CREATE INDEX IF NOT EXISTS idx_social_platform ON social_posts(platform, published_at);
+CREATE INDEX IF NOT EXISTS idx_social_experiment ON social_experiments(experiment_key, variant);
+CREATE INDEX IF NOT EXISTS idx_social_funnel_post ON social_funnel_metrics(social_post_id, measured_at);
 CREATE INDEX IF NOT EXISTS idx_conversions_occurred ON conversions(occurred_at);
 CREATE INDEX IF NOT EXISTS idx_product_decisions_run ON product_decisions(run_id, decision);
 CREATE INDEX IF NOT EXISTS idx_affiliate_metrics_offer ON affiliate_metrics_daily(offer_id, measured_date);

@@ -146,3 +146,23 @@ python3 -m trend_commerce report
 - 事件、災害、医療、金融など禁止テーマは上流のコンプライアンス検査でキュー登録しない
 
 本番移行時は、最初に各媒体1投稿だけをテストアカウントへ送り、表示、広告表記、リンク先、削除手順を確認します。
+# フックA/Bテストと学習
+
+トレンド投稿は、商品・根拠・遷移先を固定し、冒頭のフックだけを2案生成します。
+
+- A: 「韓国で検索急上昇。なぜ今注目されている？」のような理由疑問型
+- B: 「韓国で広がる○○。日本で選ぶ前に見る点は？」のような対象者・判断ギャップ型
+- 疑問への答えは投稿本文またはカルーセル2枚目に必ず置く
+- A案を先に配信し、500表示以上になるまでB案は保留して重複感を防ぐ
+- 根拠にない「SNSでバズ」「全員が使っている」などは書かない
+- Xは短い疑問→答え→候補、Instagramは1枚目フック→2枚目で理由を説明する
+
+評価はCTRだけで決めません。各案500インプレッション以上を目安に、CTR 45%、平均滞在時間25%、CVR 30%で勝ちパターンを判定します。
+
+```bash
+python3 -m trend_commerce social-funnel-metric --post-id 1 --measured-at 2026-06-29 --impressions 1000 --link-clicks 80 --landing-sessions 70 --engaged-seconds 2800 --conversions 3 --revenue 1500
+python3 -m trend_commerce social-learning-report
+python3 -m trend_commerce social-ab-release --minimum-impressions 500
+```
+
+学習結果は `output/social/learning_report.csv` に出力します。サンプル不足時は勝敗を確定せず「継続テスト」にします。

@@ -18,6 +18,7 @@ from .database import initialize, transaction
 from .rakuten import RakutenProduct, RakutenProductClient
 from .settings import ROOT, Settings
 from .social import _fit_text, _next_schedule
+from .social_optimization import information_gap_hooks, register_experiment
 from .utils import normalize_text, stable_hash
 
 
@@ -557,60 +558,79 @@ def _enqueue_opportunity(conn, settings: Settings, item: TrendOpportunity, appro
     target_url = _target_url(settings, item.rule.page_slug)
     approval = "approved" if approve else "pending"
     inserted = 0
-    x_text = _x_post(item)
-    fitted_x = _fit_text(x_text, "x", target_url)
-    x_fingerprint = stable_hash("trend", "x", item.fingerprint, normalize_text(fitted_x))
-    cursor = conn.execute(
-        """
-        INSERT INTO social_posts(
-            content_id, platform, variant_key, post_text, target_url, media_json,
-            fingerprint, scheduled_at, status, approval_status
-        ) VALUES (?, 'x', 'trend-evidence', ?, ?, '{}', ?, ?, ?, ?)
-        ON CONFLICT(content_id, platform, variant_key) DO UPDATE SET
-            post_text=excluded.post_text, target_url=excluded.target_url,
-            fingerprint=excluded.fingerprint, scheduled_at=excluded.scheduled_at,
-            status=excluded.status, approval_status=excluded.approval_status,
-            last_error='', updated_at=CURRENT_TIMESTAMP
-        WHERE social_posts.status IN ('rejected', 'failed')
-        """,
-        (
-            content_id, fitted_x, target_url, x_fingerprint, _next_schedule(conn, "x"),
-            "ready" if approve else "queued", approval,
-        ),
-    )
-    inserted += int(cursor.rowcount > 0)
+    hooks = information_gap_hooks(item.market_label, item.topic, item.why_trending)
+    experiment_key = "trend-%s" % item.fingerprint[:16]
+    for hook in hooks:
+        x_text = _x_post(item, hook["text"])
+        fitted_x = _fit_text(x_text, "x", target_url)
+        x_fingerprint = stable_hash("trend", "x", item.fingerprint, hook["variant"], normalize_text(fitted_x))
+        cursor = conn.execute(
+            """
+            INSERT INTO social_posts(
+                content_id, platform, variant_key, post_text, target_url, media_json,
+                fingerprint, scheduled_at, status, approval_status
+            ) VALUES (?, 'x', ?, ?, ?, '{}', ?, ?, ?, ?)
+            ON CONFLICT(content_id, platform, variant_key) DO UPDATE SET
+                post_text=excluded.post_text, target_url=excluded.target_url,
+                fingerprint=excluded.fingerprint, scheduled_at=excluded.scheduled_at,
+                status=excluded.status, approval_status=excluded.approval_status,
+                last_error='', updated_at=CURRENT_TIMESTAMP
+            WHERE social_posts.status IN ('queued', 'rejected', 'failed')
+            """,
+            (
+                content_id, "trend-hook-%s" % hook["variant"].lower(), fitted_x, target_url,
+                x_fingerprint, _next_schedule(conn, "x"),
+                ("experiment_hold" if hook["variant"] == "B" else ("ready" if approve else "queued")), approval,
+            ),
+        )
+        inserted += int(cursor.rowcount > 0)
+        post = conn.execute(
+            "SELECT id FROM social_posts WHERE content_id=? AND platform='x' AND variant_key=?",
+            (content_id, "trend-hook-%s" % hook["variant"].lower()),
+        ).fetchone()
+        if post:
+            register_experiment(conn, experiment_key, int(post["id"]), hook["variant"], hook["hook_type"], hook["promise"])
 
-    instagram_caption = _instagram_caption(item)
-    slides = _instagram_slides(item)
-    media = json.dumps(
-        {"slides": slides, "media_urls": [], "source_image_url": item.product.image_url},
-        ensure_ascii=False,
-    )
-    ig_fingerprint = stable_hash("trend", "instagram", item.fingerprint, normalize_text(instagram_caption))
-    cursor = conn.execute(
-        """
-        INSERT INTO social_posts(
-            content_id, platform, variant_key, post_text, target_url, media_json,
-            fingerprint, scheduled_at, status, approval_status
-        ) VALUES (?, 'instagram', 'trend-carousel', ?, ?, ?, ?, ?, 'media_required', ?)
-        ON CONFLICT(content_id, platform, variant_key) DO UPDATE SET
-            post_text=excluded.post_text, target_url=excluded.target_url,
-            media_json=excluded.media_json, fingerprint=excluded.fingerprint,
-            scheduled_at=excluded.scheduled_at, status='media_required',
-            approval_status=excluded.approval_status, last_error='',
-            updated_at=CURRENT_TIMESTAMP
-        WHERE social_posts.status IN ('rejected', 'failed')
-        """,
-        (
-            content_id, _fit_text(instagram_caption, "instagram", target_url), target_url,
-            media, ig_fingerprint, _next_schedule(conn, "instagram"), approval,
-        ),
-    )
-    inserted += int(cursor.rowcount > 0)
+    for hook in hooks:
+        instagram_caption = _instagram_caption(item, hook["text"])
+        slides = _instagram_slides(item, hook["text"])
+        media = json.dumps(
+            {"slides": slides, "media_urls": [], "source_image_url": item.product.image_url},
+            ensure_ascii=False,
+        )
+        ig_fingerprint = stable_hash("trend", "instagram", item.fingerprint, hook["variant"], normalize_text(instagram_caption))
+        variant_key = "trend-carousel-%s" % hook["variant"].lower()
+        cursor = conn.execute(
+            """
+            INSERT INTO social_posts(
+                content_id, platform, variant_key, post_text, target_url, media_json,
+                fingerprint, scheduled_at, status, approval_status
+            ) VALUES (?, 'instagram', ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(content_id, platform, variant_key) DO UPDATE SET
+                post_text=excluded.post_text, target_url=excluded.target_url,
+                media_json=excluded.media_json, fingerprint=excluded.fingerprint,
+                scheduled_at=excluded.scheduled_at, status=excluded.status,
+                approval_status=excluded.approval_status, last_error='',
+                updated_at=CURRENT_TIMESTAMP
+            WHERE social_posts.status IN ('queued', 'media_required', 'rejected', 'failed')
+            """,
+            (
+                content_id, variant_key, _fit_text(instagram_caption, "instagram", target_url), target_url,
+                media, ig_fingerprint, _next_schedule(conn, "instagram"),
+                "experiment_hold" if hook["variant"] == "B" else "media_required", approval,
+            ),
+        )
+        inserted += int(cursor.rowcount > 0)
+        post = conn.execute(
+            "SELECT id FROM social_posts WHERE content_id=? AND platform='instagram' AND variant_key=?",
+            (content_id, variant_key),
+        ).fetchone()
+        if post:
+            register_experiment(conn, experiment_key, int(post["id"]), hook["variant"], hook["hook_type"], hook["promise"])
     return inserted
 
 
-def _x_post(item: TrendOpportunity) -> str:
+def _x_post(item: TrendOpportunity, hook: str = "") -> str:
     if item.observation:
         source = item.observation.news_source or item.observation.source_name or "関連メディア"
         if item.observation.source_name == "Google Trends":
@@ -623,21 +643,23 @@ def _x_post(item: TrendOpportunity) -> str:
             )
     else:
         lead = "【日本で売れ筋】楽天リアルタイムランキングを確認。"
-    product = _shorten(item.product.name, 16)
-    product_status = "楽天%s位" % item.product.rank if item.product.rank else "日本で販売中・レビュー確認済み"
+    product = _shorten(item.product.name, 12)
+    product_status = "楽天%s位" % item.product.rank if item.product.rank else "レビュー確認済み"
     note = " 人物の愛用品を示すものではありません。" if item.person_note else ""
-    return "%s 関連候補は%s「%s」。%s%s 他の商品もくらメモへ。" % (
-        lead, product_status, product, "掲載品と同一とは限りません。", note,
+    answer = re.sub(r"^【[^】]+】", "", item.why_trending).strip()
+    answer = _shorten(answer, 24)
+    return "%s\n確認できた理由：%s\n関連候補：%s「%s」%s\n※掲載品と同一とは限りません。" % (
+        hook or lead, answer, product_status, product, note,
     )
 
 
-def _instagram_caption(item: TrendOpportunity) -> str:
+def _instagram_caption(item: TrendOpportunity, hook: str = "") -> str:
     product_status = "楽天リアルタイムランキング%s位" % item.product.rank if item.product.rank else "日本で販売中・レビュー確認済み"
     source = item.observation.news_source if item.observation else "楽天市場"
     details = item.why_trending
     note = "\n\n%s" % item.person_note if item.person_note else ""
     return (
-        "【%s】%s\n\n%s\n\n"
+        "%s\n\n【%s】%s\n\n答え：%s\n\n"
         "こんな時に：%s\n"
         "向いている人：%s\n"
         "関連カテゴリの候補：%s「%s」\n"
@@ -645,16 +667,16 @@ def _instagram_caption(item: TrendOpportunity) -> str:
         "ほかにも今売れている商品を用途別にまとめています。プロフィールのリンクから確認できます。"
         "%s\n\n情報源：%s"
     ) % (
-        item.market_label, item.topic, details, item.rule.context, item.rule.audience,
+        hook, item.market_label, item.topic, details, item.rule.context, item.rule.audience,
         product_status, _shorten(item.product.name, 70), note, source,
     )
 
 
-def _instagram_slides(item: TrendOpportunity) -> List[str]:
+def _instagram_slides(item: TrendOpportunity, hook: str = "") -> List[str]:
     product_status = "楽天リアルタイムランキング%s位" % item.product.rank if item.product.rank else "日本で販売中・レビュー確認済み"
     source = item.observation.news_source if item.observation else "楽天市場"
     return [
-        "%s\n%s" % (item.market_label, item.topic),
+        hook or "%s\n%s" % (item.market_label, item.topic),
         "なぜ話題？\n%s" % _shorten(item.why_trending, 95),
         "こんな時に使える\n%s" % item.rule.context,
         "日本で確認できる候補\n%s" % product_status,
