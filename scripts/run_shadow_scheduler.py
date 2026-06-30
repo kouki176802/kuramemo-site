@@ -18,6 +18,8 @@ from typing import Dict, List, Optional, Sequence
 
 
 ROOT = Path(__file__).resolve().parent.parent
+LATEST_RUN_LOG = ROOT / "output" / "operations" / "latest_company_bot_run.json"
+SCHEDULER_STATE_LOG = ROOT / "output" / "operations" / "company_bot_state.json"
 
 
 def cycle_commands(
@@ -120,6 +122,29 @@ def _seconds_until_next_morning(now: datetime, last_sent_date: str) -> float:
     return max(5.0, (target - now).total_seconds())
 
 
+def _load_last_full_cycle(
+    state_path: Path = SCHEDULER_STATE_LOG,
+    latest_path: Path = LATEST_RUN_LOG,
+) -> Optional[datetime]:
+    for log_path, key in ((state_path, "last_full_cycle_at"), (latest_path, "finished_at")):
+        try:
+            payload = json.loads(log_path.read_text(encoding="utf-8"))
+            if log_path == latest_path and not payload.get("full_cycle"):
+                continue
+            return datetime.fromisoformat(str(payload[key]))
+        except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+            continue
+    return None
+
+
+def _save_last_full_cycle(value: datetime, state_path: Path = SCHEDULER_STATE_LOG) -> None:
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(
+        json.dumps({"last_full_cycle_at": value.isoformat(timespec="seconds")}, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--interval-minutes", type=int, default=60)
@@ -149,7 +174,8 @@ def main() -> None:
             sync_wordpress=not args.no_wordpress_sync,
         ))
 
-    last_full: Optional[datetime] = None
+    # DockerやPCの再起動直後に全商品監査を重ねないよう、直近の完了時刻を復元する。
+    last_full = _load_last_full_cycle()
     last_discord_date = ""
     while True:
         now = datetime.now()
@@ -165,7 +191,8 @@ def main() -> None:
             sync_wordpress=not args.no_wordpress_sync,
         )
         if full_due:
-            last_full = now
+            last_full = datetime.now()
+            _save_last_full_cycle(last_full)
         morning_due = (now.hour == 7 and now.minute >= 30) or now.hour == 8
         if morning_due and last_discord_date != now.date().isoformat():
             _send_morning_discord()

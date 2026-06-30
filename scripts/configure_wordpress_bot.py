@@ -48,7 +48,13 @@ def main() -> None:
         "WORDPRESS_USERNAME": "kuramemo_owner",
         "WORDPRESS_APPLICATION_PASSWORD": password,
     })
+    subprocess.run([
+        str(DOCKER), "compose", "--env-file", str(ROOT / ".env.wordpress"),
+        "-f", str(ROOT / "docker-compose.wordpress.yml"), "up", "-d",
+        "--force-recreate", "company-bot",
+    ], cwd=ROOT, env=env, check=True)
     print("WordPress投稿BOTの接続情報をGit管理外の.envへ設定しました")
+    print("会社BOTを新しい接続情報で再起動しました")
 
 
 if __name__ == "__main__":

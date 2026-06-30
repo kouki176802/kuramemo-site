@@ -1,7 +1,9 @@
 import importlib.util
+import json
 import unittest
 from datetime import datetime
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "scripts" / "run_shadow_scheduler.py"
@@ -37,6 +39,17 @@ class SchedulerTest(unittest.TestCase):
         now = datetime(2026, 6, 30, 7, 31, 0)
         seconds = scheduler._seconds_until_next_morning(now, "2026-06-30")
         self.assertEqual((23 * 60 + 59) * 60, seconds)
+
+    def test_scheduler_restores_last_full_cycle_after_restart(self):
+        with TemporaryDirectory() as tmp:
+            log = Path(tmp) / "latest.json"
+            log.write_text(json.dumps({
+                "last_full_cycle_at": "2026-06-30T19:17:16",
+            }), encoding="utf-8")
+            self.assertEqual(
+                scheduler._load_last_full_cycle(log, Path(tmp) / "missing-latest.json"),
+                datetime(2026, 6, 30, 19, 17, 16),
+            )
 
 
 if __name__ == "__main__":

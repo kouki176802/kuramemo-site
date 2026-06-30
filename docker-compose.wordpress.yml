@@ -41,6 +41,42 @@ services:
       - ./output/site:/var/www/html/wp-content/themes/kuramemo/generated:ro
       - ./wordpress/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
 
+  company-bot:
+    image: python:3.12-slim
+    restart: unless-stopped
+    init: true
+    depends_on:
+      database:
+        condition: service_healthy
+      wordpress:
+        condition: service_started
+    working_dir: /app
+    user: "${LOCAL_UID:-501}:${LOCAL_GID:-20}"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      TZ: Asia/Tokyo
+      WORDPRESS_BASE_URL: http://wordpress
+    command:
+      - python
+      - scripts/run_shadow_scheduler.py
+      - --interval-minutes
+      - "60"
+      - --full-cycle-hours
+      - "24"
+    volumes:
+      - .:/app
+    healthcheck:
+      test: ["CMD", "python", "scripts/company_bot_healthcheck.py", "--max-age-minutes", "130"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 20m
+    stop_grace_period: 30s
+
   wpcli:
     image: wordpress:cli-php8.3
     profiles: ["tools"]

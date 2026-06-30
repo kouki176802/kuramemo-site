@@ -30,17 +30,31 @@ python3 scripts/run_evals.py
 
 日常運転は次の1本です。PCとDocker Desktopが動いている間、1時間ごとに軽量処理、24時間ごとに全社処理を実行します。外部SNSへは自動投稿しません。
 
+Docker版WordPressを使う場合、会社BOTもDocker内で常駐します。PC起動後にDocker Desktopが起動すれば自動復帰し、Terminalを開き続ける必要はありません。
+
+```bash
+zsh scripts/setup_local_wordpress.sh
+```
+
+ホスト側で一時的に動かす場合だけ、次を使います。
+
 ```bash
 zsh scripts/run_company_bot.command
 ```
 
-ターミナルを閉じたままバックグラウンド運転する場合:
+稼働確認:
+
+```bash
+zsh scripts/company_bot_status.sh
+```
+
+Dockerを使わずホスト版だけをバックグラウンド運転する場合:
 
 ```bash
 zsh scripts/start_company_bot_background.sh
 ```
 
-停止は `zsh scripts/stop_company_bot_background.sh` です。PC再起動後は開始コマンドをもう一度実行します。朝のDiscord便は7時30分に時刻を合わせます。外部SNSの実投稿は、API認証と明示フラグを設定するまで行いません。
+停止は `zsh scripts/stop_company_bot_background.sh` です。Docker版とホスト版は同時に起動しないでください。朝のDiscord便は7時30分に時刻を合わせます。外部SNSの実投稿は、API認証と明示フラグを設定するまで行いません。
 
 サイト表示:
 

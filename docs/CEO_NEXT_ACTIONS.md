@@ -12,24 +12,22 @@
 - トレンド発見、商品監査、記事更新、WordPress同期、SNS案生成、A/Bテスト、レポート生成を全社BOTへ接続
 - XとInstagram向け候補、Discord朝便、重複投稿防止を実装済み
 - 外部SNSへの実投稿は認証完了まで安全停止
+- 全社BOTをDocker常駐化し、2時間以上更新がない場合の死活監視を実装済み
 
 ## CEOの登録なしで動く範囲
 
-```bash
-zsh scripts/run_company_bot.command
-```
-
-PCとDocker Desktopが動いている間、1時間ごとの軽量処理と24時間ごとの全社処理を行います。Discord朝便は7時30分に合わせます。ターミナルは最小化して構いませんが、PC再起動後は再度起動します。
+会社BOTはWordPressと同じDocker内で常駐します。PCとDocker Desktopが動いている間、1時間ごとの軽量処理と24時間ごとの全社処理を行います。Discord朝便は7時30分に合わせます。Terminalを開き続ける必要はなく、Docker Desktop起動後に自動復帰します。
 
 ## CEOの対応が必要な残作業
 
-1. 外部公開用ドメインとHTTPS公開先を決める
-2. GA4測定IDとSearch Console確認トークンを取得する
-3. Instagramをプロアカウント化し、Meta API認証を行う
-4. Xの自動投稿を使う場合はX APIの契約と認証を行う
-5. AIサービス案件のASP提携が承認されたらリンクを登録する
-6. 公開後のCTR・滞在時間・CVRを蓄積する
-7. 過去に会話へ直接記載したDiscord Webhookを安全のため再発行する
+1. Docker Desktopの「ログイン時に起動」を有効にする
+2. 外部公開用ドメインとHTTPS公開先を決める
+3. GA4測定IDとSearch Console確認トークンを取得する
+4. Instagramをプロアカウント化し、Meta API認証を行う
+5. Xの自動投稿を使う場合はX APIの契約と認証を行う
+6. AIサービス案件のASP提携が承認されたらリンクを登録する
+7. 公開後のCTR・滞在時間・CVRを蓄積する
+8. 過去に会話へ直接記載したDiscord Webhookを安全のため再発行する
 
 ## 公開前の判断基準
 

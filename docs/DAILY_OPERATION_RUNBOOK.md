@@ -6,13 +6,19 @@
 
 登録・課金前は、トレンド収集・商品更新・WordPress同期・投稿案生成までを自動化し、外部SNSへの送信だけを安全停止する。
 
-通常は個別コマンドではなく、次の会社BOTを起動する。
+通常は個別コマンドではなく、Docker内の会社BOTを使う。
 
 ```bash
-zsh scripts/run_company_bot.command
+zsh scripts/setup_local_wordpress.sh
 ```
 
-朝のDiscord便は7時30分に時刻を合わせる。PC再起動後は再度起動する。
+朝のDiscord便は7時30分に時刻を合わせる。Docker Desktopが起動すれば会社BOTも自動復帰するため、Terminalは不要。
+
+稼働状況を確認したい場合:
+
+```bash
+zsh scripts/company_bot_status.sh
+```
 
 ## 毎日やること
 
