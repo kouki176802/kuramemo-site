@@ -8,7 +8,14 @@ from pathlib import Path
 
 from trend_commerce.catalog import upsert_offer_csv
 from trend_commerce.settings import load_settings
-from trend_commerce.static_site import _home_featured_trend, _home_trend_cards, build_static_site, markdown_to_html
+from trend_commerce.static_site import (
+    _category_product_signal,
+    _category_trend_reason,
+    _home_featured_trend,
+    _home_trend_cards,
+    build_static_site,
+    markdown_to_html,
+)
 
 
 class StaticSiteTest(unittest.TestCase):
@@ -50,6 +57,18 @@ class StaticSiteTest(unittest.TestCase):
         self.assertNotIn("日本で販売中", japan_cards)
         self.assertIn("韓国で検索急上昇", korea_cards)
         self.assertIn("日本で購入できる", korea_cards)
+
+    def test_category_product_signals_distinguish_trend_reviews_and_purpose(self):
+        trend = {
+            "country_name": "韓国", "market_label": "韓国で検索急上昇",
+            "news_source": "公式発表", "topic": "新商品が話題",
+        }
+        self.assertEqual("今話題", _category_product_signal({}, trend)[1])
+        self.assertEqual("口コミ多数", _category_product_signal({"review_count": "800"}, None)[1])
+        self.assertEqual("用途一致", _category_product_signal({"review_count": "12"}, None)[1])
+        reason = _category_trend_reason(trend)
+        self.assertIn("韓国で検索急上昇", reason)
+        self.assertIn("日本で購入できる", reason)
 
     def test_markdown_tables_and_lists_render(self):
         html = markdown_to_html("# 見出し\n\n- A\n- B\n\n| 商品 | 注意 |\n|---|---|\n| 扇風機 | 音 |\n")

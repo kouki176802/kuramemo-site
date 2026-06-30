@@ -77,7 +77,7 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
         category_body_prefix = ""
         if page.slug.startswith("category-"):
             page_markdown = _strip_first_h1(page_markdown)
-            category_body_prefix = render_category_intro(page, pages, product_map, offers, offer_assets)
+            category_body_prefix = render_category_intro(page, pages, product_map, offers, offer_assets, trend_rows)
         if page.kind == "comparison":
             page_markdown = _strip_first_h1(page_markdown)
             page_markdown = _prepare_comparison_markdown(page_markdown)
@@ -380,6 +380,7 @@ def render_category_intro(
     product_map: Dict[str, List[Dict[str, str]]],
     offers: Dict[str, Offer],
     offer_assets: Dict[str, Dict[str, str]],
+    trend_rows: List[Dict[str, str]],
 ) -> str:
     comparison_pages = {item.slug: item for item in pages if item.kind == "comparison"}
     matches = [
@@ -402,7 +403,7 @@ def render_category_intro(
         )
     )
     cards = "\n".join(_category_comparison_card(comparison_pages[slug], rows, offers) for slug, rows in matches)
-    product_cards = render_category_product_shelf(page.slug, matches, offers, offer_assets)
+    product_cards = render_category_product_shelf(page.slug, matches, offers, offer_assets, trend_rows)
     article_cards = render_category_articles(page, pages)
     profile = _category_profile(page.title)
     playbook = "\n".join(
@@ -486,20 +487,39 @@ def render_category_product_shelf(
     matches: List[tuple[str, List[Dict[str, str]]]],
     offers: Dict[str, Offer],
     offer_assets: Dict[str, Dict[str, str]],
+    trend_rows: List[Dict[str, str]],
 ) -> str:
     cards: List[str] = []
     card_limit = 12 if category_slug == "category-housework-timesaving" else 8
+    page_slugs = {page_slug for page_slug, _ in matches}
+    category_trends = [trend for trend in _ordered_home_trends(trend_rows) if trend.get("page_slug") in page_slugs]
+    trend_by_offer = {
+        trend.get("item_code", ""): trend
+        for trend in category_trends[:2]
+        if trend.get("item_code")
+    }
+    candidates = []
+    original_order = 0
     for page_slug, rows in matches:
         for row in rows:
             offer_id = row.get("offer_candidate_id", "")
             offer = offers.get(offer_id)
             if not offer or offer.status != "active" or not offer.affiliate_url:
                 continue
-            cards.append(_category_product_card(category_slug, page_slug, row, offer, offer_assets.get(offer_id, {}), len(cards) + 1))
-            if len(cards) >= card_limit:
-                break
-        if len(cards) >= card_limit:
-            break
+            candidates.append((page_slug, row, offer, original_order))
+            original_order += 1
+    candidates.sort(key=lambda item: (item[2].offer_id not in trend_by_offer, item[3]))
+    for page_slug, row, offer, _ in candidates[:card_limit]:
+        offer_id = offer.offer_id
+        cards.append(_category_product_card(
+            category_slug,
+            page_slug,
+            row,
+            offer,
+            offer_assets.get(offer_id, {}),
+            len(cards) + 1,
+            trend_by_offer.get(offer_id),
+        ))
     if not cards:
         return ""
     return """
@@ -521,6 +541,7 @@ def _category_product_card(
     offer: Offer,
     asset: Dict[str, str],
     index: int,
+    trend: Dict[str, str] | None = None,
 ) -> str:
     image_html = _offer_image(asset, _category_offer_title(offer, row.get("product_group", "")))
     stats = _compact_asset_stats(asset)
@@ -528,13 +549,17 @@ def _category_product_card(
     review_note = _review_reference(asset)
     checks = [point.strip() for point in row.get("comparison_points", "").split("|") if point.strip()]
     check_text = "・".join(checks[:3]) or "価格・仕様・返品条件"
+    signal_class, signal_label, signal_detail = _category_product_signal(asset, trend)
+    trend_reason = _category_trend_reason(trend) if trend else ""
     return """
 <article class="category-product-card">
   <a class="category-product-image" href="%s" rel="nofollow sponsored noopener" target="_blank" data-offer-id="%s" data-page-slug="%s" data-network="%s" data-product-group="%s">%s</a>
   <div>
+    <div class="category-product-signal %s"><b>%s</b><small>%s</small></div>
     <span>No.%02d / %s</span>
     <h3>%s</h3>
     <p class="category-product-intro">%s</p>
+    %s
     <div class="category-product-reasons">
       <p><b>向いている人</b>%s</p>
       <p><b>レビュー参考</b>%s</p>
@@ -554,10 +579,14 @@ def _category_product_card(
         html.escape(offer.network, quote=True),
         html.escape(row.get("product_group", ""), quote=True),
         image_html,
+        html.escape(signal_class, quote=True),
+        html.escape(signal_label),
+        html.escape(signal_detail),
         index,
         html.escape(row.get("product_group", "候補")),
         html.escape(_category_offer_title(offer, row.get("product_group", ""))),
         html.escape(introduction),
+        trend_reason,
         html.escape(row.get("reader_problem", "").replace("したい", "したい人")),
         html.escape(review_note),
         html.escape(check_text),
@@ -568,6 +597,30 @@ def _category_product_card(
         html.escape(offer.network, quote=True),
         html.escape(row.get("product_group", ""), quote=True),
         html.escape(page_slug, quote=True),
+    )
+
+
+def _category_product_signal(asset: Dict[str, str], trend: Dict[str, str] | None) -> tuple[str, str, str]:
+    if trend:
+        return "signal-trending", "今話題", _trend_market_label(trend)
+    reviews = _safe_int(asset.get("review_count", "0"))
+    if reviews >= 500:
+        return "signal-reviews", "口コミ多数", "レビュー%s件" % f"{reviews:,}"
+    return "signal-purpose", "用途一致", "選定条件を確認"
+
+
+def _category_trend_reason(trend: Dict[str, str]) -> str:
+    source = trend.get("news_source") or "ニュース・検索データ"
+    topic = _shorten_display(trend.get("topic", "関連テーマが注目されています"), 64)
+    if _is_japan_trend(trend):
+        reason = "%sで「%s」が話題。用途が近い販売中候補として紹介しています。" % (source, topic)
+    else:
+        reason = "%s。%sで「%s」が話題。日本で購入できる関連候補です。" % (
+            _trend_market_label(trend), source, topic,
+        )
+    return (
+        '<div class="category-trend-reason"><b>なぜ今？</b><p>%s</p>'
+        '<small>ニュース掲載品とは異なる場合があります</small></div>' % html.escape(reason)
     )
 
 
@@ -2009,11 +2062,21 @@ main { width:min(1120px, calc(100% - 24px)); margin:0 auto 44px; }
 .category-product-card { display:grid; grid-template-columns:148px minmax(0, 1fr); gap:16px; align-items:start; min-height:270px; padding:16px; border:1px solid rgba(59,130,246,.14); border-radius:22px; background:#fff; box-shadow:0 12px 34px rgba(17,24,39,.05); }
 .category-product-image { display:block; text-decoration:none; }
 .category-product-image .offer-visual { height:118px; margin:0; }
+.category-product-signal { display:inline-flex; align-items:center; gap:7px; width:max-content; max-width:100%; margin:0 0 8px; padding:5px 9px; border-radius:999px; background:#f1f5f9; color:#475569; }
+.category-product-signal b { font-family:var(--mono); font-size:11px; letter-spacing:.05em; }
+.category-product-signal small { display:inline; color:inherit; font-size:10px; font-weight:850; }
+.category-product-signal.signal-trending { background:linear-gradient(100deg,#ede9fe,#fdf2f8); color:#6d28d9; border:1px solid rgba(109,40,217,.2); box-shadow:0 6px 18px rgba(109,40,217,.1); }
+.category-product-signal.signal-reviews { background:#eff6ff; color:#1d4ed8; }
+.category-product-signal.signal-purpose { background:#ecfdf5; color:#047857; }
 .category-product-card span { display:block; color:var(--accent2); font-family:var(--mono); font-size:11px; font-weight:900; letter-spacing:.1em; text-transform:uppercase; }
 .category-product-card h3 { display:block; margin:7px 0 8px; padding:0; border:0; font-size:20px; line-height:1.2; letter-spacing:-.035em; }
 .category-product-card h3::before, .category-product-card h3::after { content:none; }
 .category-product-card p { margin:0 0 8px; color:#374151; font-weight:800; line-height:1.6; }
 .category-product-intro { font-size:14px; }
+.category-trend-reason { margin:10px 0 12px; padding:10px 11px; border:1px solid rgba(109,40,217,.18); border-left:4px solid #7c3aed; border-radius:0 13px 13px 0; background:linear-gradient(135deg,#f5f3ff,#fdf2f8); }
+.category-trend-reason b { display:block; margin-bottom:3px; color:#6d28d9; font-family:var(--mono); font-size:11px; letter-spacing:.06em; }
+.category-trend-reason p { margin:0; color:#374151; font-size:12px; line-height:1.55; }
+.category-trend-reason small { margin-top:5px; color:#6b7280; font-size:10px; }
 .category-product-reasons { display:grid; gap:6px; margin:12px 0; }
 .category-product-reasons p { display:grid; grid-template-columns:92px minmax(0, 1fr); gap:8px; margin:0; padding:8px 10px; border-radius:12px; background:#f7f9ff; color:#4b5563; font-size:12px; font-weight:700; line-height:1.5; }
 .category-product-reasons b { color:#1d4ed8; font-family:var(--mono); font-size:11px; letter-spacing:.03em; }
