@@ -1023,10 +1023,16 @@ def _offer_listing_reason(
     if trend:
         source = trend.get("news_source") or "ニュース・検索トレンド"
         topic = _shorten_display(trend.get("topic", "関連テーマが注目されています"), 72)
-        reason = (
-            "%sで「%s」を確認。話題テーマと用途が近く、日本で販売中・レビュー確認済みの候補として選びました。"
-            % (source, topic)
-        )
+        if _is_japan_trend(trend):
+            reason = (
+                "%sで「%s」を確認。話題テーマと用途が近く、販売中・レビュー確認済みの候補として選びました。"
+                % (source, topic)
+            )
+        else:
+            reason = (
+                "%sで「%s」を確認。海外の話題テーマと用途が近く、日本で購入できる販売中・レビュー確認済みの候補として選びました。"
+                % (source, topic)
+            )
         return (
             '<div class="offer-evidence offer-evidence-trend">'
             '<span>なぜ今 注目？</span><strong>%s</strong><p>%s</p>'
@@ -1649,7 +1655,7 @@ def _home_trend_cards(rows: List[Dict[str, str]]) -> str:
         )
     if not cards:
         return ""
-    return '<section class="home-trend-pulse" id="trend-now"><div><span>日本の今と海外トレンド</span><h2>どこで なぜ注目されているか</h2></div><div class="home-trend-grid">%s</div></section>' % "".join(cards)
+    return '<section class="home-trend-pulse" id="trend-now"><div><span>ニュース・SNSと海外トレンド</span><h2>どこで なぜ注目されているか</h2></div><div class="home-trend-grid">%s</div></section>' % "".join(cards)
 
 
 def _ordered_home_trends(rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
@@ -1665,9 +1671,15 @@ def _ordered_home_trends(rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
 def _home_trend_reason(row: Dict[str, str], limit: int = 120) -> str:
     source = row.get("news_source") or "ニュース・検索データ"
     market = _trend_market_label(row)
+    if _is_japan_trend(row):
+        reason = "%sで話題のテーマと用途が近く、販売中・レビュー確認済みの候補です。" % source
+    else:
+        reason = (
+            "%s。%sで話題のテーマと用途が近く、日本で購入できる販売中・レビュー確認済みの候補です。"
+            % (market, source)
+        )
     return _shorten_display(
-        "%s。%sで話題のテーマと用途が近く、日本で販売中・レビュー確認済みの候補です。"
-        % (market, source),
+        reason,
         limit,
     )
 
@@ -1744,9 +1756,15 @@ def _home_featured_trend(rows: List[Dict[str, str]]) -> tuple[str, str]:
 
 def _trend_market_label(row: Dict[str, str]) -> str:
     label = row.get("market_label", "")
-    if label:
-        return label
     country = row.get("country_name", "日本")
+    if country == "日本":
+        if "ニュース" in label:
+            return "ニュースで注目"
+        if "検索" in label:
+            return "検索で注目"
+        return "注目テーマ"
+    if label:
+        return label.replace("米国", "アメリカ").replace("英国", "イギリス")
     if country == "米国":
         country = "アメリカ"
     elif country == "英国":
@@ -1757,6 +1775,10 @@ def _trend_market_label(row: Dict[str, str]) -> str:
     if "Googleニュース" in evidence:
         return "%sのニュースで注目" % country
     return "%sで注目" % country
+
+
+def _is_japan_trend(row: Dict[str, str]) -> bool:
+    return row.get("country_name", "日本") == "日本"
 
 
 def _home_landing(offer_assets: Dict[str, Dict[str, str]], trend_rows: List[Dict[str, str]]) -> str:
@@ -1794,8 +1816,8 @@ def _home_landing(offer_assets: Dict[str, Dict[str, str]], trend_rows: List[Dict
       <b>%s</b>
     </div>
     <div class="hero-actions">
-      <a class="button button-primary" href="#trend-now">話題の商品を見る</a>
-      <a class="button button-secondary" href="%s.html#trend-evidence">今の注目商品を見る</a>
+      <a class="button button-primary" href="#trend-now">注目の理由をまとめて見る</a>
+      <a class="button button-secondary" href="%s.html#affiliate-links">この商品を比較する</a>
     </div>
   </div>
   <div class="hero-showcase" aria-label="注目の選び方">
@@ -1913,8 +1935,8 @@ main { width:min(1120px, calc(100% - 24px)); margin:0 auto 44px; }
 .hero-trend-hook p, .hero-why-highlight p { max-width:none; margin:0; font-size:13px; line-height:1.55; }
 .hero-why-highlight { background:linear-gradient(135deg,#eff6ff,#f5f3ff); border-width:2px; }
 .hero-why-highlight b { color:#6d28d9; }
-.hero-product-focus { display:grid; grid-template-columns:92px minmax(0,1fr); gap:12px; align-items:center; width:100%; margin-top:auto; padding:10px; border-radius:17px; background:#fff; border:1px solid rgba(59,130,246,.14); }
-.hero-product-focus img { width:92px; height:82px; object-fit:contain; border-radius:12px; background:#f8fafc; }
+.hero-product-focus { display:grid; grid-template-columns:128px minmax(0,1fr); gap:14px; align-items:center; width:100%; margin-top:auto; padding:10px 12px; border-radius:17px; background:#fff; border:1px solid rgba(59,130,246,.14); }
+.hero-product-focus img { width:128px; height:104px; object-fit:contain; border-radius:12px; background:#f8fafc; }
 .hero-product-focus small { color:#334155; font-family:var(--mono); font-size:11px; font-weight:900; line-height:1.6; }
 .hero-related-note { color:#6b7280; font-size:10px; font-weight:800; }
 .hero-product-stack { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-top:16px; }
@@ -2262,8 +2284,8 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .home-trend-card { grid-template-columns:82px minmax(0,1fr); min-height:0; padding:10px; border-radius:17px; }
   .home-trend-card img { width:82px; height:100px; }
   .home-trend-card strong { font-size:17px; }
-  .hero-product-focus { grid-template-columns:76px minmax(0,1fr); }
-  .hero-product-focus img { width:76px; height:70px; }
+  .hero-product-focus { grid-template-columns:92px minmax(0,1fr); gap:10px; }
+  .hero-product-focus img { width:92px; height:82px; }
   .trend-evidence > h2 { font-size:27px; }
   .trend-evidence-card { padding:14px; border-radius:18px; }
   .trend-evidence-card h2 { font-size:21px; }

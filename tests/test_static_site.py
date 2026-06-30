@@ -31,9 +31,25 @@ class StaticSiteTest(unittest.TestCase):
         self.assertIn("テスト リップティント", cards)
         self.assertIn("話題のきっかけ", cards)
         self.assertIn("なぜ掲載？", cards)
+        self.assertIn("ニュース・SNSと海外トレンド", cards)
         self.assertIn("なぜこの商品？", feature)
         self.assertIn("韓国で検索急上昇", feature)
         self.assertIn("注目の根拠", notes)
+
+    def test_japan_trend_does_not_overstate_country_but_overseas_does(self):
+        japan = {
+            "score": "80", "country_name": "日本", "market_label": "日本のニュースで注目",
+            "page_slug": "travel-outdoor-items-comparison", "item_name": "旅行バッグ",
+            "topic": "旅行用品が話題", "news_source": "ニュース媒体",
+        }
+        korea = dict(japan, country_name="韓国", market_label="韓国で検索急上昇", score="81")
+        japan_cards = _home_trend_cards([japan])
+        korea_cards = _home_trend_cards([korea])
+        self.assertIn("ニュースで注目", japan_cards)
+        self.assertNotIn("日本のニュースで注目", japan_cards)
+        self.assertNotIn("日本で販売中", japan_cards)
+        self.assertIn("韓国で検索急上昇", korea_cards)
+        self.assertIn("日本で購入できる", korea_cards)
 
     def test_markdown_tables_and_lists_render(self):
         html = markdown_to_html("# 見出し\n\n- A\n- B\n\n| 商品 | 注意 |\n|---|---|\n| 扇風機 | 音 |\n")
@@ -58,6 +74,9 @@ class StaticSiteTest(unittest.TestCase):
             trend_cosmetics = root / "output" / "site" / "trend-cosmetics-comparison.html"
             click_report = root / "output" / "site" / "click-report.html"
             self.assertTrue(index.exists())
+            index_html = index.read_text(encoding="utf-8")
+            self.assertIn("注目の理由をまとめて見る", index_html)
+            self.assertIn("この商品を比較する", index_html)
             self.assertTrue(heat.exists())
             self.assertTrue(article.exists())
             self.assertTrue(beauty.exists())
