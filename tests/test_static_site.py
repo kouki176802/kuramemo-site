@@ -8,10 +8,33 @@ from pathlib import Path
 
 from trend_commerce.catalog import upsert_offer_csv
 from trend_commerce.settings import load_settings
-from trend_commerce.static_site import build_static_site, markdown_to_html
+from trend_commerce.static_site import _home_featured_trend, _home_trend_cards, build_static_site, markdown_to_html
 
 
 class StaticSiteTest(unittest.TestCase):
+    def test_home_trends_lead_with_product_and_explain_attention(self):
+        row = {
+            "score": "88",
+            "country_name": "韓国",
+            "market_label": "韓国で検索急上昇",
+            "page_slug": "trend-cosmetics-comparison",
+            "item_name": "テスト リップティント",
+            "topic": "韓国SNSで新色リップが話題",
+            "news_source": "公式発表",
+            "image_url": "https://example.com/lip.jpg",
+            "price": "1980",
+            "review_count": "450",
+            "review_average": "4.6",
+        }
+        cards = _home_trend_cards([row])
+        feature, notes = _home_featured_trend([row])
+        self.assertIn("テスト リップティント", cards)
+        self.assertIn("話題のきっかけ", cards)
+        self.assertIn("なぜ掲載？", cards)
+        self.assertIn("なぜこの商品？", feature)
+        self.assertIn("韓国で検索急上昇", feature)
+        self.assertIn("注目の根拠", notes)
+
     def test_markdown_tables_and_lists_render(self):
         html = markdown_to_html("# 見出し\n\n- A\n- B\n\n| 商品 | 注意 |\n|---|---|\n| 扇風機 | 音 |\n")
         self.assertIn("<h1>見出し</h1>", html)
@@ -49,6 +72,13 @@ class StaticSiteTest(unittest.TestCase):
             html = heat.read_text(encoding="utf-8")
             self.assertIn("用途別に確認する商品", html)
             self.assertTrue("商品リンク準備中" in html or "楽天で詳細を確認する" in html)
+            if "楽天で詳細を確認する" in html:
+                self.assertIn("この商品を載せる理由", html)
+            for comparison in (root / "output" / "site").glob("*-comparison.html"):
+                comparison_html = comparison.read_text(encoding="utf-8")
+                active_cards = comparison_html.count("offer-card offer-card-active")
+                reasons = comparison_html.count('class="offer-evidence')
+                self.assertEqual(active_cards, reasons, comparison.name)
 
     def test_public_build_emits_canonical_sitemap_and_schema(self):
         with tempfile.TemporaryDirectory() as tmp:

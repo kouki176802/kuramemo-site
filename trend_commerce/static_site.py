@@ -95,7 +95,7 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
             comparison_rows = active_rows or rows
             body = (
                 render_comparison_intro(page, comparison_rows, offers, offer_assets)
-                + render_offer_section(page.slug, comparison_rows, offers, offer_assets)
+                + render_offer_section(page.slug, comparison_rows, offers, offer_assets, trend_rows)
                 + render_trend_evidence(page.slug, trend_rows)
                 + render_comparison_axis(comparison_rows, offer_assets)
                 + body
@@ -267,6 +267,12 @@ def _load_trend_opportunities(path: Path) -> List[Dict[str, str]]:
     rules_path = ROOT / "data" / "trend_topic_rules.csv"
     with rules_path.open(encoding="utf-8-sig", newline="") as handle:
         rules = {row["rule_id"]: row for row in csv.DictReader(handle)}
+    product_map_path = ROOT / "data" / "comparison_product_map.csv"
+    with product_map_path.open(encoding="utf-8-sig", newline="") as handle:
+        product_groups = {
+            row.get("offer_candidate_id", ""): row.get("product_group", "")
+            for row in csv.DictReader(handle)
+        }
     valid: List[Dict[str, str]] = []
     for row in rows:
         rule = rules.get(row.get("rule_id", ""))
@@ -280,6 +286,7 @@ def _load_trend_opportunities(path: Path) -> List[Dict[str, str]]:
         focused = [term for term in terms if term in evidence]
         if focused and not any(term in product for term in focused):
             continue
+        row["product_group"] = product_groups.get(row.get("item_code", ""), "")
         valid.append(row)
     return valid
 
@@ -874,13 +881,25 @@ def render_offer_section(
     rows: List[Dict[str, str]],
     offers: Dict[str, Offer],
     offer_assets: Dict[str, Dict[str, str]] | None = None,
+    trend_rows: List[Dict[str, str]] | None = None,
 ) -> str:
     if not rows:
         return ""
     cards = []
+    trend_by_offer = {
+        trend.get("item_code", ""): trend
+        for trend in (trend_rows or [])
+        if trend.get("page_slug") == slug and trend.get("item_code")
+    }
     for index, row in enumerate(rows, 1):
         offer = offers.get(row["offer_candidate_id"])
-        cards.append(_offer_card(row, offer, (offer_assets or {}).get(row["offer_candidate_id"], {}), index))
+        cards.append(_offer_card(
+            row,
+            offer,
+            (offer_assets or {}).get(row["offer_candidate_id"], {}),
+            index,
+            trend_by_offer.get(row["offer_candidate_id"]),
+        ))
     return """
 <section class="offer-section" id="affiliate-links">
   <div class="section-kicker">商品候補</div>
@@ -936,20 +955,23 @@ def render_offer_comparison_table(
 """ % "\n".join(table_rows)
 
 
-def _offer_card(row: Dict[str, str], offer: Offer | None, asset: Dict[str, str] | None = None, rank: int = 1) -> str:
+def _offer_card(
+    row: Dict[str, str],
+    offer: Offer | None,
+    asset: Dict[str, str] | None = None,
+    rank: int = 1,
+    trend: Dict[str, str] | None = None,
+) -> str:
     title = html.escape(row.get("product_group") or row.get("offer_candidate_id", "商品候補"))
     problem = html.escape(row.get("reader_problem", ""))
     points = html.escape(row.get("comparison_points", "").replace("|", " / "))
-    notes = html.escape(row.get("notes", ""))
     if offer and offer.status == "active" and offer.affiliate_url:
         name = html.escape(_compact_product_name(offer.name or title, 42))
         url = html.escape(offer.affiliate_url, quote=True)
         network = html.escape(offer.network)
         image = _offer_image(asset or {}, offer.name or title)
         stats = _offer_stats(asset or {})
-        evidence = ""
-        if notes and any(term in row.get("notes", "") for term in ("@cosme", "LIPS", "SNS", "韓国", "アメリカ", "受賞", "話題")):
-            evidence = '<p class="offer-evidence"><span>注目の根拠</span>%s</p>' % notes
+        evidence = _offer_listing_reason(row, asset or {}, trend)
         return """
 <article class="offer-card offer-card-active">
   <p class="offer-rank">No.%02d</p>
@@ -991,6 +1013,48 @@ def _offer_card(row: Dict[str, str], offer: Offer | None, asset: Dict[str, str] 
   <p class="offer-note">提携条件と公式情報を確認中です。確認が終わるまで商品名やリンクは公開しません。</p>
 </article>
 """ % (rank, title, problem, points)
+
+
+def _offer_listing_reason(
+    row: Dict[str, str],
+    asset: Dict[str, str],
+    trend: Dict[str, str] | None,
+) -> str:
+    if trend:
+        source = trend.get("news_source") or "ニュース・検索トレンド"
+        topic = _shorten_display(trend.get("topic", "関連テーマが注目されています"), 72)
+        reason = (
+            "%sで「%s」を確認。話題テーマと用途が近く、日本で販売中・レビュー確認済みの候補として選びました。"
+            % (source, topic)
+        )
+        return (
+            '<div class="offer-evidence offer-evidence-trend">'
+            '<span>なぜ今 注目？</span><strong>%s</strong><p>%s</p>'
+            '<small>ニュース掲載品とこの商品は同一とは限りません</small></div>'
+            % (html.escape(_trend_market_label(trend)), html.escape(reason))
+        )
+    notes = row.get("notes", "")
+    if notes and any(term in notes for term in ("@cosme", "LIPS", "SNS", "韓国", "アメリカ", "受賞", "話題")):
+        return (
+            '<div class="offer-evidence offer-evidence-trend"><span>注目の根拠</span>'
+            '<p>%s</p></div>' % html.escape(notes)
+        )
+    reviews = _safe_int(asset.get("review_count", "0"))
+    average = asset.get("review_average", "")
+    verified = []
+    if reviews:
+        verified.append("レビュー%s件" % f"{reviews:,}")
+    if average and average != "0.0":
+        verified.append("評価★%s" % str(average)[:4])
+    proof = "・".join(verified) or "販売状況と商品情報"
+    problem = row.get("reader_problem", "用途に合う商品を探している人")
+    points = [point for point in row.get("comparison_points", "").split("|") if point][:3]
+    point_text = "・".join(points) or "価格と条件"
+    return (
+        '<div class="offer-evidence"><span>この商品を載せる理由</span>'
+        '<strong>%sを確認</strong><p>%s向けの候補として、%sを比べやすいため掲載しています。</p></div>'
+        % (html.escape(proof), html.escape(problem), html.escape(point_text))
+    )
 
 
 def _display_offer_name(name: str, fallback: str) -> str:
@@ -1560,7 +1624,7 @@ def _home_figure(offer_assets: Dict[str, Dict[str, str]], offer_id: str, alt: st
 
 def _home_trend_cards(rows: List[Dict[str, str]]) -> str:
     cards: List[str] = []
-    ordered = sorted(rows, key=lambda row: (row.get("country_name", "日本") == "日本", -int(float(row.get("score") or 0))))
+    ordered = _ordered_home_trends(rows)
     for row in ordered[:3]:
         image = ""
         if row.get("image_url"):
@@ -1569,18 +1633,113 @@ def _home_trend_cards(rows: List[Dict[str, str]]) -> str:
                 html.escape(_compact_product_name(row.get("item_name", "注目商品"), 30), quote=True),
             )
         cards.append(
-            '<a class="home-trend-card" href="%s.html#trend-evidence">%s<div><span>%s・%s</span><strong>%s</strong><p>%s</p></div></a>' % (
+            '<a class="home-trend-card" href="%s.html#trend-evidence">%s<div>'
+            '<span>%s・%s</span><strong>%s</strong>'
+            '<p class="home-trend-trigger"><b>話題のきっかけ</b>%s</p>'
+            '<p class="home-trend-reason"><b>なぜ掲載？</b>%s</p>'
+            '</div></a>' % (
                 html.escape(row.get("page_slug", "index"), quote=True),
                 image,
                 html.escape(_trend_market_label(row)),
                 html.escape(row.get("news_source", "ニュース・検索")),
-                html.escape(_shorten_display(row.get("topic", "注目商品"), 34)),
-                html.escape(_shorten_display(row.get("why_trending", "注目の理由を確認"), 72)),
+                html.escape(_trend_display_product(row)),
+                html.escape(_shorten_display(row.get("topic", "関連テーマが注目されています"), 48)),
+                html.escape(_home_trend_reason(row, 76)),
             )
         )
     if not cards:
         return ""
-    return '<section class="home-trend-pulse"><div><span>日本の今と海外トレンド</span><h2>どこで なぜ注目されているか</h2></div><div class="home-trend-grid">%s</div></section>' % "".join(cards)
+    return '<section class="home-trend-pulse" id="trend-now"><div><span>日本の今と海外トレンド</span><h2>どこで なぜ注目されているか</h2></div><div class="home-trend-grid">%s</div></section>' % "".join(cards)
+
+
+def _ordered_home_trends(rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    return sorted(
+        rows,
+        key=lambda row: (
+            -int(float(row.get("score") or 0)),
+            row.get("country_name", "日本") == "日本",
+        ),
+    )
+
+
+def _home_trend_reason(row: Dict[str, str], limit: int = 120) -> str:
+    source = row.get("news_source") or "ニュース・検索データ"
+    market = _trend_market_label(row)
+    return _shorten_display(
+        "%s。%sで話題のテーマと用途が近く、日本で販売中・レビュー確認済みの候補です。"
+        % (market, source),
+        limit,
+    )
+
+
+def _trend_display_product(row: Dict[str, str]) -> str:
+    group = row.get("product_group", "").strip()
+    raw_name = re.sub(r"[【\[].*?[】\]]", " ", row.get("item_name", ""))
+    raw_name = re.sub(r"[（(][0-9,\-〜～.\s]+[）)]", " ", raw_name)
+    raw_name = re.sub(r"\s+", " ", raw_name).strip()
+    brand_match = re.match(r"([A-Za-z][A-Za-z0-9&+.'-]*(?:\s+[A-Za-z0-9&+.'-]+){0,2})", raw_name)
+    brand = brand_match.group(1).strip() if brand_match else ""
+    if group:
+        return _shorten_display((brand + " " + group).strip(), 30)
+    return _compact_product_name(raw_name or "注目商品", 30)
+
+
+def _home_featured_trend(rows: List[Dict[str, str]]) -> tuple[str, str]:
+    ordered = _ordered_home_trends(rows)
+    if not ordered:
+        feature = """
+    <a class="hero-feature-card" href="heat-relief-items-comparison.html">
+      <span>SNS・ニュース注目</span>
+      <strong>暑さ対策グッズ</strong>
+      <p>夏の買い物は外出・室内・就寝で候補を分ける</p>
+      <div class="hero-product-stack">
+        <img src="assets/products/portable_fan_research.jpg" alt="携帯扇風機の商品画像">
+        <img src="assets/products/cooling_bedding_research.jpg" alt="冷感寝具の商品画像">
+        <img src="assets/products/air_circulator_research.jpg" alt="サーキュレーターの商品画像">
+      </div>
+    </a>"""
+        notes = """
+    <div class="hero-notes">
+      <a href="heat-relief-items-comparison.html#trend-evidence"><b>01</b><span>なぜ注目か</span></a>
+      <a href="heat-relief-items-comparison.html#affiliate-links"><b>02</b><span>商品候補</span></a>
+      <a href="heat-relief-items-comparison.html#comparison-axis"><b>03</b><span>向く人を見る</span></a>
+    </div>"""
+        return feature, notes
+    row = ordered[0]
+    page_slug = html.escape(row.get("page_slug", "index"), quote=True)
+    product_name = html.escape(_trend_display_product(row))
+    topic = html.escape(_shorten_display(row.get("topic", "関連テーマが注目されています"), 72))
+    market = html.escape(_trend_market_label(row))
+    source = html.escape(row.get("news_source") or "ニュース・検索データ")
+    reason = html.escape(_home_trend_reason(row, 108))
+    image = ""
+    if row.get("image_url"):
+        image = '<img src="%s" alt="%sの商品画像" loading="eager">' % (
+            html.escape(row["image_url"], quote=True), product_name,
+        )
+    stats = []
+    if row.get("price"):
+        stats.append("¥%s" % html.escape(row["price"]))
+    if row.get("review_count"):
+        stats.append("レビュー%s件" % html.escape(row["review_count"]))
+    if row.get("review_average"):
+        stats.append("★%s" % html.escape(row["review_average"]))
+    stats_html = " / ".join(stats)
+    feature = """
+    <a class="hero-feature-card hero-feature-trend" href="%s.html#trend-evidence">
+      <div class="hero-feature-heading"><span>%s・%s</span><strong>%s</strong></div>
+      <div class="hero-trend-hook"><b>話題のきっかけ</b><p>%s</p></div>
+      <div class="hero-why-highlight"><b>なぜこの商品？</b><p>%s</p></div>
+      <div class="hero-product-focus">%s<small>%s</small></div>
+      <small class="hero-related-note">ニュース掲載品とは異なる場合があります</small>
+    </a>""" % (page_slug, market, source, product_name, topic, reason, image, stats_html)
+    notes = """
+    <div class="hero-notes">
+      <a href="%s.html#trend-evidence"><b>01</b><span>注目の根拠</span></a>
+      <a href="%s.html#affiliate-links"><b>02</b><span>商品候補</span></a>
+      <a href="%s.html#comparison-axis"><b>03</b><span>向く人を見る</span></a>
+    </div>""" % (page_slug, page_slug, page_slug)
+    return feature, notes
 
 
 def _trend_market_label(row: Dict[str, str]) -> str:
@@ -1602,6 +1761,21 @@ def _trend_market_label(row: Dict[str, str]) -> str:
 
 def _home_landing(offer_assets: Dict[str, Dict[str, str]], trend_rows: List[Dict[str, str]]) -> str:
     trend_cards = _home_trend_cards(trend_rows)
+    featured_trend, featured_notes = _home_featured_trend(trend_rows)
+    ordered_trends = _ordered_home_trends(trend_rows)
+    featured_slug = html.escape(
+        ordered_trends[0].get("page_slug", "heat-relief-items-comparison") if ordered_trends
+        else "heat-relief-items-comparison",
+        quote=True,
+    )
+    topic_labels = []
+    for trend in ordered_trends:
+        label = trend.get("product_group", "")
+        if label and label not in topic_labels:
+            topic_labels.append(label)
+        if len(topic_labels) == 3:
+            break
+    topic_summary = html.escape(" / ".join(topic_labels) or "暑さ対策 / 防災備蓄 / 旅行外出")
     return """
 <section class="hero">
   <div class="hero-copy">
@@ -1617,29 +1791,16 @@ def _home_landing(offer_assets: Dict[str, Dict[str, str]], trend_rows: List[Dict
     </div>
     <div class="hero-topic-row">
       <span>いまの注目</span>
-      <b>暑さ対策 / 防災備蓄 / 旅行外出</b>
+      <b>%s</b>
     </div>
     <div class="hero-actions">
-      <a class="button button-primary" href="#comparison-index">話題の商品を見る</a>
-      <a class="button button-secondary" href="heat-relief-items-comparison.html">今の注目商品を見る</a>
+      <a class="button button-primary" href="#trend-now">話題の商品を見る</a>
+      <a class="button button-secondary" href="%s.html#trend-evidence">今の注目商品を見る</a>
     </div>
   </div>
   <div class="hero-showcase" aria-label="注目の選び方">
-    <a class="hero-feature-card" href="heat-relief-items-comparison.html">
-      <span>SNS・ニュース注目</span>
-      <strong>暑さ対策グッズ</strong>
-      <p>夏の買い物は外出・室内・就寝で候補を分ける</p>
-      <div class="hero-product-stack">
-        <img src="assets/products/portable_fan_research.jpg" alt="携帯扇風機の商品画像">
-        <img src="assets/products/cooling_bedding_research.jpg" alt="冷感寝具の商品画像">
-        <img src="assets/products/air_circulator_research.jpg" alt="サーキュレーターの商品画像">
-      </div>
-    </a>
-    <div class="hero-notes">
-      <a href="heat-relief-items-comparison.html#comparison-axis"><b>01</b><span>用途別に見る</span></a>
-      <a href="heat-relief-items-comparison.html#affiliate-links"><b>02</b><span>候補を確認</span></a>
-      <a href="heat-relief-items-comparison.html#買わなくていい人"><b>03</b><span>不要な人も見る</span></a>
-    </div>
+    %s
+    %s
   </div>
 </section>
 %s
@@ -1664,6 +1825,10 @@ def _home_landing(offer_assets: Dict[str, Dict[str, str]], trend_rows: List[Dict
   </div>
 </section>
 """ % (
+        topic_summary,
+        featured_slug,
+        featured_trend,
+        featured_notes,
         trend_cards,
         _home_figure(offer_assets, "usb_c_charger_small_research", "USB-C充電器"),
         _home_figure(offer_assets, "home_hair_removal_research", "美容・身だしなみ用品"),
@@ -1741,6 +1906,17 @@ main { width:min(1120px, calc(100% - 24px)); margin:0 auto 44px; }
 .home .hero-feature-card strong { font-size:42px; color:#111827; }
 .hero-feature-card p { max-width:330px; color:#fff8e9; font-size:15px; font-weight:850; line-height:1.7; }
 .home .hero-feature-card p { color:#374151; }
+.home .hero-feature-trend { min-height:440px; gap:12px; justify-content:flex-start; }
+.hero-feature-heading strong { margin-bottom:0; font-size:clamp(27px,3vw,38px); line-height:1.08; }
+.hero-trend-hook, .hero-why-highlight { width:100%; padding:12px 14px; border-radius:17px; background:rgba(255,255,255,.78); border:1px solid rgba(59,130,246,.15); }
+.hero-trend-hook b, .hero-why-highlight b { display:block; margin-bottom:4px; color:#2563eb; font-family:var(--mono); font-size:11px; font-weight:900; letter-spacing:.08em; }
+.hero-trend-hook p, .hero-why-highlight p { max-width:none; margin:0; font-size:13px; line-height:1.55; }
+.hero-why-highlight { background:linear-gradient(135deg,#eff6ff,#f5f3ff); border-width:2px; }
+.hero-why-highlight b { color:#6d28d9; }
+.hero-product-focus { display:grid; grid-template-columns:92px minmax(0,1fr); gap:12px; align-items:center; width:100%; margin-top:auto; padding:10px; border-radius:17px; background:#fff; border:1px solid rgba(59,130,246,.14); }
+.hero-product-focus img { width:92px; height:82px; object-fit:contain; border-radius:12px; background:#f8fafc; }
+.hero-product-focus small { color:#334155; font-family:var(--mono); font-size:11px; font-weight:900; line-height:1.6; }
+.hero-related-note { color:#6b7280; font-size:10px; font-weight:800; }
 .hero-product-stack { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-top:16px; }
 .hero-product-stack img { width:100%; height:120px; object-fit:contain; padding:10px; background:#fffaf0; border:1px solid rgba(255,255,255,.18); filter:drop-shadow(0 12px 16px rgba(0,0,0,.22)); }
 .home .hero-product-stack img { height:128px; border-radius:20px; background:rgba(255,255,255,.86); border-color:rgba(59,130,246,.14); filter:drop-shadow(0 16px 18px rgba(37,99,235,.14)); }
@@ -1830,11 +2006,14 @@ main { width:min(1120px, calc(100% - 24px)); margin:0 auto 44px; }
 .home-trend-pulse h2 { margin:0; padding:0; border:0; font-size:clamp(27px,3.5vw,39px); }
 .home-trend-pulse h2::before, .home-trend-pulse h2::after { content:none; }
 .home-trend-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
-.home-trend-card { display:grid; grid-template-columns:92px minmax(0,1fr); gap:12px; min-height:142px; padding:13px; border:1px solid rgba(59,130,246,.16); border-radius:20px; background:rgba(255,255,255,.9); color:#111827; text-decoration:none; }
-.home-trend-card img { width:92px; height:112px; object-fit:contain; border-radius:13px; background:#f8fafc; }
+.home-trend-card { display:grid; grid-template-columns:104px minmax(0,1fr); gap:13px; min-height:230px; padding:14px; border:1px solid rgba(59,130,246,.16); border-radius:20px; background:rgba(255,255,255,.9); color:#111827; text-decoration:none; }
+.home-trend-card img { width:104px; height:128px; object-fit:contain; border-radius:13px; background:#f8fafc; }
 .home-trend-card span { display:block; color:#2563eb; font-family:var(--mono); font-size:10px; font-weight:900; }
-.home-trend-card strong { display:block; margin:5px 0; font-family:var(--display); font-size:18px; line-height:1.2; }
-.home-trend-card p { margin:0; color:#4b5563; font-size:12px; font-weight:750; line-height:1.55; }
+.home-trend-card strong { display:block; margin:6px 0 10px; font-family:var(--display); font-size:19px; line-height:1.22; }
+.home-trend-card p { margin:7px 0 0; padding:8px 9px; border-radius:11px; color:#4b5563; font-size:11px; font-weight:750; line-height:1.5; }
+.home-trend-card p b { display:block; margin-bottom:3px; color:#1d4ed8; font-family:var(--mono); font-size:10px; letter-spacing:.04em; }
+.home-trend-trigger { background:#f8fafc; }
+.home-trend-reason { background:#eff6ff; border-left:3px solid #3b82f6; }
 .trend-evidence { margin:22px 0 26px; padding:22px; border:1px solid rgba(139,92,246,.2); border-radius:28px; background:linear-gradient(145deg, rgba(248,250,255,.98), rgba(245,243,255,.9)); box-shadow:0 20px 54px rgba(76,29,149,.08); }
 .trend-evidence > h2 { display:block; margin:7px 0 8px; padding:0; border:0; font-size:clamp(30px,4vw,43px); letter-spacing:-.055em; }
 .trend-evidence > h2::before, .trend-evidence > h2::after { content:none; }
@@ -1973,8 +2152,13 @@ th { background:#eff6ff; color:#1e3a8a; font-family:var(--mono); font-size:12px;
 .offer-stats { display:flex; flex-wrap:wrap; gap:5px; margin:0 0 8px; }
 .offer-stats span { padding:3px 7px; border-radius:0; background:#f1f1f1; color:#333; border:1px solid rgba(17,17,17,.12); font-family:var(--mono); font-size:11px; font-weight:900; }
 .offer-problem { color:#4b5563; margin:8px 0; }
-.offer-evidence { background:#f3f7ff; border-left:3px solid var(--accent); border-radius:0 10px 10px 0; color:#334155; font-size:13px; line-height:1.65; margin:10px 0; padding:8px 10px; }
-.offer-evidence span { color:var(--accent); display:block; font-family:var(--mono); font-size:11px; font-weight:900; letter-spacing:.08em; margin-bottom:2px; }
+.offer-evidence { background:linear-gradient(135deg,#eff6ff,#f8fafc); border:1px solid rgba(37,99,235,.2); border-left:4px solid var(--accent); border-radius:0 14px 14px 0; color:#334155; font-size:13px; line-height:1.6; margin:12px 0; padding:11px 12px; }
+.offer-evidence span { color:var(--accent); display:block; font-family:var(--mono); font-size:11px; font-weight:900; letter-spacing:.08em; margin-bottom:5px; }
+.offer-evidence strong { display:block; margin-bottom:4px; color:#111827; font-size:14px; line-height:1.4; }
+.offer-evidence p { margin:0; color:#334155; font-size:12px; line-height:1.6; }
+.offer-evidence small { display:block; margin-top:6px; color:#6b7280; font-size:10px; font-weight:800; }
+.offer-evidence-trend { background:linear-gradient(135deg,#eef2ff,#faf5ff); border-color:rgba(109,40,217,.22); border-left-color:#7c3aed; box-shadow:0 8px 22px rgba(109,40,217,.08); }
+.offer-evidence-trend span { color:#6d28d9; }
 .offer-points { color:var(--muted); font-size:13px; margin:8px 0; }
 .offer-points span { display:block; color:var(--accent); font-family:var(--mono); font-weight:900; margin-bottom:3px; }
 .offer-card-active { border-color:#dec99f; }
@@ -2011,6 +2195,7 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .hero h1, .home .hero h1 { max-width:100%; font-size:34px; line-height:1.12; margin:12px 0 14px; letter-spacing:-.045em; word-break:keep-all; overflow-wrap:normal; }
   .hero h1 span { white-space:nowrap; }
   .home .hero-feature-card strong { font-size:32px; line-height:1.08; }
+  .home .hero-feature-trend { min-height:0; }
   .hero p { font-size:16px; line-height:1.75; }
   .hero-actions { margin-top:18px; gap:10px; }
   .hero-topic-row { align-items:flex-start; flex-direction:column; gap:4px; }
@@ -2074,8 +2259,11 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .trend-evidence { margin:16px 0 20px; padding:14px; border-radius:22px; }
   .home-trend-pulse { margin:12px 0 20px; padding:14px; border-radius:22px; }
   .home-trend-pulse h2 { font-size:25px; }
-  .home-trend-card { grid-template-columns:78px minmax(0,1fr); min-height:124px; padding:10px; border-radius:17px; }
-  .home-trend-card img { width:78px; height:94px; }
+  .home-trend-card { grid-template-columns:82px minmax(0,1fr); min-height:0; padding:10px; border-radius:17px; }
+  .home-trend-card img { width:82px; height:100px; }
+  .home-trend-card strong { font-size:17px; }
+  .hero-product-focus { grid-template-columns:76px minmax(0,1fr); }
+  .hero-product-focus img { width:76px; height:70px; }
   .trend-evidence > h2 { font-size:27px; }
   .trend-evidence-card { padding:14px; border-radius:18px; }
   .trend-evidence-card h2 { font-size:21px; }
