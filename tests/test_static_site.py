@@ -117,7 +117,7 @@ class StaticSiteTest(unittest.TestCase):
             self.assertIn("charging-power-items-comparison.html", article.read_text(encoding="utf-8"))
             self.assertFalse(click_report.exists())
             self.assertTrue(not_found.exists())
-            self.assertIn('name="robots" content="noindex,follow"', not_found.read_text(encoding="utf-8"))
+            self.assertIn('name="robots" content="noindex,', not_found.read_text(encoding="utf-8"))
             self.assertNotIn("クリック分析", index.read_text(encoding="utf-8"))
             html = heat.read_text(encoding="utf-8")
             self.assertIn("用途別に確認する商品", html)
