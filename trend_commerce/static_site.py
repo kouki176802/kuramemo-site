@@ -117,6 +117,26 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
         out.write_text(html_doc, encoding="utf-8")
         rendered.append(str(out))
 
+    not_found_body = """
+<section class="page-card not-found-page">
+  <div class="section-kicker">404 / NOT FOUND</div>
+  <h1>ページが見つかりません</h1>
+  <p>URLが変更されたか、公開を終了した可能性があります。</p>
+  <div class="hero-actions">
+    <a class="button" href="index.html">トップへ戻る</a>
+    <a class="button button-secondary" href="category-services.html">サービス比較を見る</a>
+  </div>
+</section>
+"""
+    not_found = render_layout(
+        "ページが見つかりません", not_found_body, "404", slugs,
+        settings.site_base_url, settings.ga4_measurement_id, settings.gsc_verification,
+    ).replace(
+        '<meta name="robots" content="index,follow,max-image-preview:large">',
+        '<meta name="robots" content="noindex,follow">',
+    )
+    (target / "404.html").write_text(not_found, encoding="utf-8")
+
     _write_robots(target, settings.site_base_url)
     if settings.site_base_url:
         (target / "CNAME").write_text(settings.site_base_url.split("://", 1)[-1].split("/", 1)[0] + "\n", encoding="utf-8")
@@ -2083,6 +2103,8 @@ main { width:min(1120px, calc(100% - 24px)); margin:0 auto 44px; }
 .category-product-signal.signal-trending { background:linear-gradient(100deg,#ede9fe,#fdf2f8); color:#6d28d9; border:1px solid rgba(109,40,217,.2); box-shadow:0 6px 18px rgba(109,40,217,.1); }
 .category-product-signal.signal-reviews { background:#eff6ff; color:#1d4ed8; }
 .category-product-signal.signal-purpose { background:#ecfdf5; color:#047857; }
+.not-found-page { min-height:58vh; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; }
+.not-found-page h1 { max-width:900px; }
 .category-product-card span { display:block; color:var(--accent2); font-family:var(--mono); font-size:11px; font-weight:900; letter-spacing:.1em; text-transform:uppercase; }
 .category-product-card h3 { display:block; margin:7px 0 8px; padding:0; border:0; font-size:20px; line-height:1.2; letter-spacing:-.035em; }
 .category-product-card h3::before, .category-product-card h3::after { content:none; }

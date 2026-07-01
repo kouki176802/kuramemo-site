@@ -95,6 +95,7 @@ class StaticSiteTest(unittest.TestCase):
             mobile_services = root / "output" / "site" / "mobile-carrier-services.html"
             investment_services = root / "output" / "site" / "investment-account-services.html"
             click_report = root / "output" / "site" / "click-report.html"
+            not_found = root / "output" / "site" / "404.html"
             self.assertTrue(index.exists())
             index_html = index.read_text(encoding="utf-8")
             self.assertIn("注目の理由をまとめて見る", index_html)
@@ -115,6 +116,8 @@ class StaticSiteTest(unittest.TestCase):
             self.assertNotIn("公開中のガイド", beauty.read_text(encoding="utf-8"))
             self.assertIn("charging-power-items-comparison.html", article.read_text(encoding="utf-8"))
             self.assertFalse(click_report.exists())
+            self.assertTrue(not_found.exists())
+            self.assertIn('name="robots" content="noindex,follow"', not_found.read_text(encoding="utf-8"))
             self.assertNotIn("クリック分析", index.read_text(encoding="utf-8"))
             html = heat.read_text(encoding="utf-8")
             self.assertIn("用途別に確認する商品", html)
@@ -150,6 +153,7 @@ class StaticSiteTest(unittest.TestCase):
             self.assertIn('affiliate_click', (site / "click-tracker.js").read_text(encoding="utf-8"))
             self.assertIn('https://kuramemo.example/sitemap.xml', (site / "robots.txt").read_text(encoding="utf-8"))
             self.assertIn('https://kuramemo.example/index.html', (site / "sitemap.xml").read_text(encoding="utf-8"))
+            self.assertNotIn('https://kuramemo.example/404.html', (site / "sitemap.xml").read_text(encoding="utf-8"))
 
     def test_upsert_offer_csv_replaces_existing_offer(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -35,7 +35,7 @@ def check_publish_ready(settings: Settings, site_dir: Path) -> Dict[str, object]
     html_files = sorted(site_dir.glob("*.html"))
     for path in html_files:
         body = path.read_text(encoding="utf-8")
-        if 'name="robots" content="noindex' in body:
+        if path.name != "404.html" and 'name="robots" content="noindex' in body:
             errors.append("noindexが残っています: %s" % path.name)
         if "127.0.0.1" in body or "localhost" in body:
             errors.append("ローカルURLが残っています: %s" % path.name)
