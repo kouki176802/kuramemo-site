@@ -92,7 +92,8 @@ def _trim_to_platform_limit(text: str, platform: str) -> str:
 
 def _fit_text(text: str, platform: str, target_url: str) -> str:
     disclosure = _disclosure(platform)
-    suffix = "\n\n%s" % disclosure
+    linkless_cta = "\n\n気になる方は固定ポストへ" if platform == "x" and not target_url else ""
+    suffix = "%s\n\n%s" % (linkless_cta, disclosure)
     if platform in {"x", "threads"} and target_url:
         suffix += "\n%s" % target_url
     limit = PLATFORM_LIMITS[platform]

@@ -80,6 +80,7 @@ class SocialTest(unittest.TestCase):
     def test_x_without_link_does_not_append_empty_url(self):
         fitted = _fit_text("韓国で注目される理由を確認", "x", "")
         self.assertNotIn("http", fitted)
+        self.assertIn("気になる方は固定ポストへ", fitted)
         self.assertTrue(fitted.endswith("※広告を含む記事です"))
 
     def test_dry_run_does_not_mark_published(self):
