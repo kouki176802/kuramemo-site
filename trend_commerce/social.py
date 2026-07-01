@@ -33,7 +33,7 @@ class PublishResult:
 
 def _article_url(settings: Settings, slug: str) -> str:
     if settings.site_base_url:
-        return "%s/%s/" % (settings.site_base_url, slug)
+        return "%s/%s.html" % (settings.site_base_url, slug)
     return "{ARTICLE_URL:%s}" % slug
 
 

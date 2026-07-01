@@ -119,6 +119,7 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
 
     _write_robots(target, settings.site_base_url)
     if settings.site_base_url:
+        (target / "CNAME").write_text(settings.site_base_url.split("://", 1)[-1].split("/", 1)[0] + "\n", encoding="utf-8")
         sitemap = _write_sitemap(target, settings.site_base_url, rendered)
         rendered.append(str(sitemap))
 

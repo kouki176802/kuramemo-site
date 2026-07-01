@@ -14,7 +14,12 @@ class PublishCheckTest(unittest.TestCase):
     def test_local_build_is_not_publish_ready(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = load_settings()
-            settings = replace(base, output_dir=Path(tmp) / "output", database_path=Path(tmp) / "db.sqlite3")
+            settings = replace(
+                base,
+                output_dir=Path(tmp) / "output",
+                database_path=Path(tmp) / "db.sqlite3",
+                site_base_url="",
+            )
             build_static_site(settings)
             result = check_publish_ready(settings, settings.output_dir / "site")
             self.assertFalse(result["ready"])
@@ -33,3 +38,4 @@ class PublishCheckTest(unittest.TestCase):
             result = check_publish_ready(settings, settings.output_dir / "site")
             self.assertTrue(result["ready"])
             self.assertIn("GA4測定IDが未設定", result["warnings"])
+            self.assertEqual("kuramemo.example\n", (settings.output_dir / "site" / "CNAME").read_text())
