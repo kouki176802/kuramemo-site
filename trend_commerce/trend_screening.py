@@ -17,7 +17,7 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 from .database import initialize, transaction
 from .rakuten import RakutenProduct, RakutenProductClient
 from .settings import ROOT, Settings
-from .social import _fit_text, _next_schedule
+from .social import _fit_text, _next_schedule, _x_schedule_has_link
 from .social_optimization import information_gap_hooks, register_experiment
 from .utils import normalize_text, stable_hash
 
@@ -565,7 +565,9 @@ def _enqueue_opportunity(conn, settings: Settings, item: TrendOpportunity, appro
     experiment_key = "trend-%s" % item.fingerprint[:16]
     for hook in hooks:
         x_text = _x_post(item, hook["text"])
-        fitted_x = _fit_text(x_text, "x", target_url)
+        scheduled_at = _next_schedule(conn, "x")
+        post_target_url = target_url if _x_schedule_has_link(scheduled_at) else ""
+        fitted_x = _fit_text(x_text, "x", post_target_url)
         x_fingerprint = stable_hash("trend", "x", item.fingerprint, hook["variant"], normalize_text(fitted_x))
         cursor = conn.execute(
             """
@@ -581,8 +583,8 @@ def _enqueue_opportunity(conn, settings: Settings, item: TrendOpportunity, appro
             WHERE social_posts.status IN ('queued', 'rejected', 'failed')
             """,
             (
-                content_id, "trend-hook-%s" % hook["variant"].lower(), fitted_x, target_url,
-                x_fingerprint, _next_schedule(conn, "x"),
+                content_id, "trend-hook-%s" % hook["variant"].lower(), fitted_x, post_target_url,
+                x_fingerprint, scheduled_at,
                 ("experiment_hold" if hook["variant"] == "B" else ("ready" if approve else "queued")), approval,
             ),
         )
@@ -650,9 +652,16 @@ def _x_post(item: TrendOpportunity, hook: str = "") -> str:
     product_status = "楽天%s位" % item.product.rank if item.product.rank else "レビュー確認済み"
     note = " 人物の愛用品を示すものではありません。" if item.person_note else ""
     answer = re.sub(r"^【[^】]+】", "", item.why_trending).strip()
-    answer = _shorten(answer, 24)
-    return "%s\n確認できた理由：%s\n関連候補：%s「%s」%s\n※掲載品と同一とは限りません。" % (
-        hook or lead, answer, product_status, product, note,
+    answer = _shorten(answer, 38)
+    source_detail = ""
+    if item.observation:
+        source_name = item.observation.news_source or item.observation.source_name
+        traffic = item.observation.approx_traffic
+        source_detail = "\n根拠：%s%s" % (
+            _shorten(source_name, 14), "・検索%s" % traffic if traffic else "",
+        )
+    return "%s\nなぜ注目？ %s%s\n掲載中の関連候補：%s「%s」%s\n※話題の商品と同一とは限りません。" % (
+        hook or lead, answer, source_detail, product_status, product, note,
     )
 
 

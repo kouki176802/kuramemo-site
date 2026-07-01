@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 from trend_commerce.database import connect, initialize, transaction
@@ -7,7 +8,7 @@ from trend_commerce.settings import Settings
 from trend_commerce.social import (
     approve_posts, discord_ready_messages, dispatch, enqueue_social_assets, export_queue, list_queue,
     import_manual_social_posts, mark_post_published, reject_post, reschedule_post, retry_post, set_media_urls,
-    _fit_text, _x_weighted_len,
+    X_DAILY_SLOTS_JST, _fit_text, _next_schedule, _x_schedule_has_link, _x_weighted_len,
 )
 
 
@@ -68,6 +69,19 @@ class SocialTest(unittest.TestCase):
         self.assertIn("\n\n", fitted)
         self.assertTrue(fitted.endswith("広告を含みます。"))
 
+    def test_x_daily_plan_has_twelve_slots_and_three_link_slots(self):
+        self.assertEqual(12, len(X_DAILY_SLOTS_JST))
+        scheduled = [
+            datetime(2030, 1, 1, hour - 9 if hour >= 9 else hour + 15, minute, tzinfo=timezone.utc).isoformat()
+            for hour, minute in X_DAILY_SLOTS_JST
+        ]
+        self.assertEqual(3, sum(_x_schedule_has_link(value) for value in scheduled))
+
+    def test_x_without_link_does_not_append_empty_url(self):
+        fitted = _fit_text("韓国で注目される理由を確認", "x", "")
+        self.assertNotIn("http", fitted)
+        self.assertTrue(fitted.endswith("※広告を含む記事です"))
+
     def test_dry_run_does_not_mark_published(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -77,6 +91,8 @@ class SocialTest(unittest.TestCase):
             with transaction(settings.database_path) as conn:
                 enqueue_social_assets(conn, settings, content_id, "article-1", {"x": ["投稿"], "threads": [], "instagram": []})
             approve_posts(settings, [], approve_all=True)
+            post_id = list_queue(settings, platform="x")[0]["id"]
+            reschedule_post(settings, post_id, "2020-01-01T00:00:00+00:00")
             result = dispatch(settings, live=False)
             self.assertEqual(result[0]["mode"], "dry-run")
             with connect(settings.database_path) as conn:
@@ -173,6 +189,10 @@ class SocialTest(unittest.TestCase):
             with transaction(settings.database_path) as conn:
                 enqueue_social_assets(conn, settings, content_id, "article-1", {"x": ["投稿"], "threads": [], "instagram": []})
             approve_posts(settings, [], approve_all=True)
+            post_id = list_queue(settings, platform="x")[0]["id"]
+            reschedule_post(settings, post_id, "2020-01-01T00:00:00+00:00")
+            with transaction(settings.database_path) as conn:
+                conn.execute("UPDATE social_posts SET target_url='{ARTICLE_URL:article-1}' WHERE id=?", (post_id,))
             with self.assertRaisesRegex(ValueError, "SITE_BASE_URL"):
                 dispatch(settings, live=True)
 

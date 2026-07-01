@@ -22,6 +22,13 @@ PLATFORM_LIMITS = {"x": 280, "threads": 500, "instagram": 2200}
 PLATFORM_INTERVALS = {"x": 30, "threads": 45, "instagram": 180}
 URL_WEIGHT = 23
 URL_PATTERN = re.compile(r"https?://\S+")
+JST = timezone(timedelta(hours=9))
+# 12 posts/day. Only the three marked slots send readers to the site.
+X_DAILY_SLOTS_JST = (
+    (7, 0), (8, 30), (10, 0), (11, 30), (13, 0), (14, 30),
+    (16, 0), (17, 30), (19, 0), (20, 30), (22, 0), (23, 30),
+)
+X_LINK_SLOT_INDEXES = frozenset({2, 6, 10})
 
 
 @dataclass
@@ -86,7 +93,7 @@ def _trim_to_platform_limit(text: str, platform: str) -> str:
 def _fit_text(text: str, platform: str, target_url: str) -> str:
     disclosure = _disclosure(platform)
     suffix = "\n\n%s" % disclosure
-    if platform in {"x", "threads"}:
+    if platform in {"x", "threads"} and target_url:
         suffix += "\n%s" % target_url
     limit = PLATFORM_LIMITS[platform]
     if platform == "instagram":
@@ -130,7 +137,46 @@ def _ensure_manual_content(conn) -> int:
     return int(content["id"])
 
 
+def _next_x_schedule(conn, base: Optional[datetime] = None) -> str:
+    current = base or datetime.now(timezone.utc)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    row = conn.execute(
+        "SELECT MAX(scheduled_at) AS latest FROM social_posts WHERE platform='x' AND status IN ('queued', 'ready', 'experiment_hold')"
+    ).fetchone()
+    if row and row["latest"]:
+        try:
+            latest = datetime.fromisoformat(row["latest"])
+            if latest.tzinfo is None:
+                latest = latest.replace(tzinfo=timezone.utc)
+            current = max(current, latest + timedelta(seconds=1))
+        except ValueError:
+            pass
+    local = current.astimezone(JST)
+    for day_offset in range(8):
+        day = local.date() + timedelta(days=day_offset)
+        for hour, minute in X_DAILY_SLOTS_JST:
+            candidate = datetime(day.year, day.month, day.day, hour, minute, tzinfo=JST)
+            if candidate >= local:
+                return candidate.astimezone(timezone.utc).replace(microsecond=0).isoformat()
+    raise RuntimeError("X投稿枠を確保できません")
+
+
+def _x_schedule_has_link(scheduled_at: str) -> bool:
+    scheduled = datetime.fromisoformat(scheduled_at)
+    if scheduled.tzinfo is None:
+        scheduled = scheduled.replace(tzinfo=timezone.utc)
+    local_time = (scheduled.astimezone(JST).hour, scheduled.astimezone(JST).minute)
+    try:
+        slot_index = X_DAILY_SLOTS_JST.index(local_time)
+    except ValueError:
+        return False
+    return slot_index in X_LINK_SLOT_INDEXES
+
+
 def _next_schedule(conn, platform: str, base: Optional[datetime] = None) -> str:
+    if platform == "x":
+        return _next_x_schedule(conn, base)
     current = base or datetime.now(timezone.utc)
     row = conn.execute(
         "SELECT MAX(scheduled_at) AS latest FROM social_posts WHERE platform=? AND status IN ('queued', 'ready')",
@@ -159,8 +205,10 @@ def enqueue_social_assets(
     for platform in ("x", "threads"):
         for index, text in enumerate(assets.get(platform, []), start=1):
             variant = "%s-%d" % (platform, index)
-            fitted = _fit_text(text, platform, target_url)
-            fingerprint = stable_hash(platform, normalize_text(fitted), target_url)
+            scheduled_at = _next_schedule(conn, platform)
+            post_target_url = target_url if platform != "x" or _x_schedule_has_link(scheduled_at) else ""
+            fitted = _fit_text(text, platform, post_target_url)
+            fingerprint = stable_hash(platform, normalize_text(fitted), post_target_url)
             cursor = conn.execute(
                 """
                 INSERT OR IGNORE INTO social_posts(
@@ -168,7 +216,7 @@ def enqueue_social_assets(
                     fingerprint, scheduled_at, status, approval_status
                 ) VALUES (?, ?, ?, ?, ?, '{}', ?, ?, 'queued', 'pending')
                 """,
-                (content_id, platform, variant, fitted, target_url, fingerprint, _next_schedule(conn, platform)),
+                (content_id, platform, variant, fitted, post_target_url, fingerprint, scheduled_at),
             )
             inserted += int(cursor.rowcount > 0)
 
