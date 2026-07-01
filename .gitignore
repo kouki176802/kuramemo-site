@@ -4,6 +4,7 @@ __pycache__/
 .env
 .env.wordpress
 .venv/
+.tools/
 var/*.db
 var/*.db-*
 output/
