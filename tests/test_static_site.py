@@ -91,6 +91,9 @@ class StaticSiteTest(unittest.TestCase):
             fitness = root / "output" / "site" / "category-fitness.html"
             health = root / "output" / "site" / "category-health.html"
             trend_cosmetics = root / "output" / "site" / "trend-cosmetics-comparison.html"
+            services = root / "output" / "site" / "category-services.html"
+            mobile_services = root / "output" / "site" / "mobile-carrier-services.html"
+            investment_services = root / "output" / "site" / "investment-account-services.html"
             click_report = root / "output" / "site" / "click-report.html"
             self.assertTrue(index.exists())
             index_html = index.read_text(encoding="utf-8")
@@ -102,6 +105,12 @@ class StaticSiteTest(unittest.TestCase):
             self.assertTrue(fitness.exists())
             self.assertTrue(health.exists())
             self.assertTrue(trend_cosmetics.exists())
+            self.assertTrue(services.exists())
+            self.assertTrue(mobile_services.exists())
+            self.assertTrue(investment_services.exists())
+            self.assertIn("楽天モバイル公式", mobile_services.read_text(encoding="utf-8"))
+            self.assertIn("アフィリエイト状況", investment_services.read_text(encoding="utf-8"))
+            self.assertIn("category-services.html", index_html)
             self.assertFalse((root / "output" / "site" / "category-beauty-fitness.html").exists())
             self.assertNotIn("公開中のガイド", beauty.read_text(encoding="utf-8"))
             self.assertIn("charging-power-items-comparison.html", article.read_text(encoding="utf-8"))

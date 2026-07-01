@@ -12,9 +12,13 @@ add_action('after_setup_theme', static function () {
 
 add_action('wp_enqueue_scripts', static function () {
     $theme = wp_get_theme();
-    wp_enqueue_style('kuramemo-generated', get_template_directory_uri() . '/generated/styles.css', [], $theme->get('Version'));
+    $generated_css = get_template_directory() . '/generated/styles.css';
+    $generated_js = get_template_directory() . '/generated/click-tracker.js';
+    $generated_version = is_readable($generated_css) ? (string) filemtime($generated_css) : $theme->get('Version');
+    $tracker_version = is_readable($generated_js) ? (string) filemtime($generated_js) : $theme->get('Version');
+    wp_enqueue_style('kuramemo-generated', get_template_directory_uri() . '/generated/styles.css', [], $generated_version);
     wp_enqueue_style('kuramemo-wordpress', get_template_directory_uri() . '/wordpress.css', ['kuramemo-generated'], $theme->get('Version'));
-    wp_enqueue_script('kuramemo-click-tracker', get_template_directory_uri() . '/generated/click-tracker.js', [], $theme->get('Version'), true);
+    wp_enqueue_script('kuramemo-click-tracker', get_template_directory_uri() . '/generated/click-tracker.js', [], $tracker_version, true);
 });
 
 add_filter('body_class', static function ($classes) {
@@ -25,7 +29,7 @@ add_filter('body_class', static function ($classes) {
 function kuramemo_categories() {
     return [
         'AI・ガジェット', '美容', 'フィットネス', '健康', '季節・暮らし',
-        '防災・備蓄', '家事・時短', '旅行・外出',
+        '防災・備蓄', '家事・時短', '旅行・外出', 'サービス',
     ];
 }
 
@@ -39,6 +43,7 @@ function kuramemo_nav_items() {
         '防災・備蓄' => 'category-disaster-preparedness',
         '家事・時短' => 'category-housework-timesaving',
         '旅行・外出' => 'category-travel-outdoor',
+        'サービス' => 'category-services',
     ];
 }
 

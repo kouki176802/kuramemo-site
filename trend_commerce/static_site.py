@@ -75,7 +75,7 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
         page_markdown = page.markdown
         rows = product_map.get(page.slug, [])
         category_body_prefix = ""
-        if page.slug.startswith("category-"):
+        if page.slug.startswith("category-") and page.slug != "category-services":
             page_markdown = _strip_first_h1(page_markdown)
             category_body_prefix = render_category_intro(page, pages, product_map, offers, offer_assets, trend_rows)
         if page.kind == "comparison":
@@ -403,6 +403,15 @@ def render_category_intro(
         )
     )
     cards = "\n".join(_category_comparison_card(comparison_pages[slug], rows, offers) for slug, rows in matches)
+    if page.title == "AI・ガジェット":
+        cards += """
+<a class="category-comparison-card category-service-card" href="ai-school-services.html">
+  <span>Service guide / 4社</span>
+  <h2>AIスクール</h2>
+  <p>生成AI活用、Python、個別支援、契約条件から学び方を比較します。</p>
+  <small>見る軸: 学習内容 / 料金 / 質問対応 / 解約条件</small>
+</a>
+"""
     product_cards = render_category_product_shelf(page.slug, matches, offers, offer_assets, trend_rows)
     article_cards = render_category_articles(page, pages)
     profile = _category_profile(page.title)
@@ -1343,6 +1352,7 @@ def render_layout(
         ("category-disaster-preparedness", "防災・備蓄"),
         ("category-housework-timesaving", "家事・時短"),
         ("category-travel-outdoor", "旅行・外出"),
+        ("category-services", "サービス"),
         ("advertising-policy", "広告方針"),
     ]
     slugs_set = set(slugs)
@@ -1447,6 +1457,7 @@ def _schema_json(title: str, description: str, canonical_url: str, slug: str) ->
             "category-fitness": "フィットネス", "category-health": "健康",
             "category-lifestyle-seasonal": "季節・暮らし", "category-disaster-preparedness": "防災・備蓄",
             "category-housework-timesaving": "家事・時短", "category-travel-outdoor": "旅行・外出",
+            "category-services": "サービス",
         }
         items: List[Dict[str, object]] = [
             {"@type": "ListItem", "position": 1, "name": "トップ", "item": "%s/index.html" % base},
@@ -1512,6 +1523,9 @@ def _active_nav_slug(slug: str) -> str:
         "kitchen-appliances-comparison": "category-housework-timesaving",
         "living-appliances-comparison": "category-housework-timesaving",
         "travel-outdoor-items-comparison": "category-travel-outdoor",
+        "ai-school-services": "category-services",
+        "mobile-carrier-services": "category-services",
+        "investment-account-services": "category-services",
     }
     if slug in ARTICLE_TARGETS:
         category = ARTICLE_TARGETS[slug][1]
@@ -2212,8 +2226,9 @@ p, li { font-size: 15.8px; }
 .comparison-axis-card small { display:block; color:var(--muted); font-family:var(--mono); font-size:12px; line-height:1.55; }
 .notice, .ad-label { background:#fff8e6; border:1px solid #d9bf83; color:#5c430c; padding:10px 14px; border-radius:0; font-size:14px; }
 .table-wrap { overflow-x:auto; margin: 18px 0; border-radius:18px; box-shadow:none; border:1px solid rgba(59,130,246,.14); }
-table { width:100%; border-collapse: collapse; background:#fff; overflow:hidden; }
-th, td { border-bottom:1px solid rgba(17,17,17,.12); padding:12px; text-align:left; vertical-align:top; }
+table { width:100%; min-width:760px; border-collapse: collapse; background:#fff; overflow:hidden; }
+th, td { border-bottom:1px solid rgba(17,17,17,.12); padding:12px; text-align:left; vertical-align:top; word-break:auto-phrase; overflow-wrap:normal; }
+th:first-child, td:first-child { white-space:nowrap; }
 th { background:#eff6ff; color:#1e3a8a; font-family:var(--mono); font-size:12px; letter-spacing:.04em; }
 .offer-compare-wrap { margin:22px 0 20px; border-width:2px; }
 .offer-compare-table td:first-child { min-width:150px; font-family:var(--display); font-size:18px; line-height:1.45; }
