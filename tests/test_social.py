@@ -173,6 +173,8 @@ class SocialTest(unittest.TestCase):
                 encoding="utf-8",
             )
             import_manual_social_posts(settings, csv_path, platform="x", approve=True)
+            post_id = list_queue(settings, platform="x")[0]["id"]
+            reschedule_post(settings, post_id, "2020-01-01T00:00:00+00:00")
             messages = discord_ready_messages(settings, platform="x", limit=1, account_url="https://x.com/example")
             self.assertEqual(len(messages), 1)
             content = str(messages[0]["content"])
@@ -194,6 +196,8 @@ class SocialTest(unittest.TestCase):
                 encoding="utf-8",
             )
             import_manual_social_posts(settings, csv_path, platform="x", approve=True)
+            for post in list_queue(settings, platform="x"):
+                reschedule_post(settings, int(post["id"]), "2020-01-01T00:00:00+00:00")
             first_id = discord_ready_messages(settings, platform="x", limit=1)[0]["id"]
             with transaction(settings.database_path) as conn:
                 conn.execute(

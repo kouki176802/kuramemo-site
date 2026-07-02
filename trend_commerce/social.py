@@ -533,6 +533,7 @@ def discord_ready_messages(settings: Settings, platform: str = "x", limit: int =
                     OR (p.platform='instagram' AND p.status='media_required')
                   )
                   AND p.approval_status='approved'
+                  AND p.scheduled_at<=?
                   AND (p.target_url='' OR p.target_url LIKE ?)
                   AND NOT EXISTS (
                     SELECT 1 FROM social_post_attempts a
@@ -543,7 +544,7 @@ def discord_ready_messages(settings: Settings, platform: str = "x", limit: int =
                 ORDER BY p.scheduled_at, p.id
                 LIMIT ?
                 """,
-                (platform, settings.site_base_url.rstrip("/") + "/%", max(1, limit)),
+                (platform, now_iso(), settings.site_base_url.rstrip("/") + "/%", max(1, limit)),
             )
         ]
     result = []

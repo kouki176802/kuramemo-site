@@ -31,14 +31,21 @@ class SchedulerTest(unittest.TestCase):
         self.assertNotIn("wordpress-sync", joined)
         self.assertIn("trend_commerce run", joined)
 
-    def test_scheduler_aligns_morning_delivery_to_730(self):
-        now = datetime(2026, 6, 30, 7, 2, 0)
-        self.assertEqual(28 * 60, scheduler._seconds_until_next_morning(now, ""))
+    def test_scheduler_has_twelve_discord_slots(self):
+        self.assertEqual(12, len(scheduler.DISCORD_DAILY_SLOTS))
+        self.assertEqual((7, 0), scheduler.DISCORD_DAILY_SLOTS[0])
+        self.assertEqual((23, 30), scheduler.DISCORD_DAILY_SLOTS[-1])
 
-    def test_scheduler_moves_to_tomorrow_after_delivery(self):
-        now = datetime(2026, 6, 30, 7, 31, 0)
-        seconds = scheduler._seconds_until_next_morning(now, "2026-06-30")
-        self.assertEqual((23 * 60 + 59) * 60, seconds)
+    def test_scheduler_aligns_to_next_discord_slot(self):
+        now = datetime(2026, 6, 30, 7, 2, 0)
+        last_sent = datetime(2026, 6, 30, 7, 0, 0)
+        self.assertEqual(88 * 60, scheduler._seconds_until_next_discord(now, last_sent))
+
+    def test_scheduler_skips_missed_slots_instead_of_bursting(self):
+        now = datetime(2026, 6, 30, 12, 15, 0)
+        self.assertEqual(datetime(2026, 6, 30, 11, 30), scheduler._latest_due_discord_slot(now))
+        self.assertTrue(scheduler._discord_delivery_due(now, datetime(2026, 6, 30, 8, 30)))
+        self.assertFalse(scheduler._discord_delivery_due(now, datetime(2026, 6, 30, 11, 30)))
 
     def test_scheduler_restores_last_full_cycle_after_restart(self):
         with TemporaryDirectory() as tmp:
