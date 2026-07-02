@@ -85,6 +85,8 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
         body = markdown_to_html(page_markdown)
         if page.slug == "index":
             body = _home_landing(offer_assets, trend_rows)
+        if page.slug == "category-services":
+            body = render_services_hub()
         if category_body_prefix:
             body = category_body_prefix
         if page.kind == "comparison":
@@ -395,6 +397,64 @@ def _checked_date_label(value: str) -> str:
     if not match:
         return "取得時点を確認"
     return "%s/%s/%s取得" % (match.group(1), match.group(2), match.group(3))
+
+
+def render_services_hub() -> str:
+    groups = [
+        (
+            "通信を見直す", "毎月の固定費と使う場所から選ぶ", "01 / CONNECT",
+            [
+                ("スマホ回線", "データ量・通話・店舗サポート", "毎月の通信費を見直したい", "mobile-carrier-services.html"),
+                ("光回線", "月額・工事費・契約期間・特典条件", "自宅のネット環境を整えたい", "internet-line-services.html"),
+            ],
+        ),
+        (
+            "学びと仕事", "受講後に何ができるかまで比べる", "02 / LEARN",
+            [
+                ("AIスクール", "学習内容・質問対応・転職副業支援", "生成AIを仕事に生かしたい", "ai-school-services.html"),
+            ],
+        ),
+        (
+            "暮らしを充実", "利用頻度と解約条件を先に確認", "03 / LIFE",
+            [
+                ("動画配信", "作品傾向・同時視聴・無料期間", "見たい作品から選びたい", "streaming-services.html"),
+                ("美容脱毛", "方式・総額・回数・追加費用", "通院型と自宅型から選びたい", "hair-removal-services.html"),
+                ("占い・相談", "時間料金・初回特典・利用上限", "相談方法と予算を決めたい", "fortune-consultation-services.html"),
+            ],
+        ),
+        (
+            "お金を管理", "特典より長く使う条件を優先", "04 / MONEY",
+            [
+                ("クレジットカード", "年会費・還元条件・保険", "普段の支払い先に合わせたい", "credit-card-services.html"),
+                ("ネット証券", "NISA・商品・手数料・操作性", "投資口座の違いを整理したい", "investment-account-services.html"),
+            ],
+        ),
+    ]
+    sections = []
+    for group_index, (title, lead, number, items) in enumerate(groups, start=1):
+        cards = "".join(
+            '<a class="service-choice" href="%s"><span>%s</span><h3>%s</h3><p>%s</p><small>%s</small><b>詳しく比べる →</b></a>' % (
+                html.escape(href, quote=True), html.escape(number), html.escape(name),
+                html.escape(axis), html.escape(for_whom),
+            )
+            for name, axis, for_whom, href in items
+        )
+        sections.append(
+            '<section class="service-group" id="service-group-%s"><header><p>%s</p><h2>%s</h2><span>%s</span></header><div class="service-choice-grid">%s</div></section>' % (
+                group_index, html.escape(number), html.escape(title), html.escape(lead), cards,
+            )
+        )
+    return (
+        '<section class="service-hub-hero"><div class="section-kicker">SERVICE GUIDE</div>'
+        '<h1>何を見直したいかから選ぶ</h1>'
+        '<p>サービスは、名前ではなく目的から選ぶと迷いません。<br>通信・学び・暮らし・お金の4つに分け、料金と契約条件を同じ順番で確認します。</p>'
+        '<nav class="service-quick-nav" aria-label="サービスの目的">'
+        '<a href="#service-group-1">通信</a><a href="#service-group-2">学び</a><a href="#service-group-3">暮らし</a><a href="#service-group-4">お金</a></nav></section>'
+        '<section class="service-hub-intro"><div><span>まず決めること</span><strong>どの料金を減らすか<br>何を始めたいか</strong></div>'
+        '<ol><li><b>目的</b><span>困りごとを一つに絞る</span></li><li><b>総額</b><span>初期費用から解約まで見る</span></li><li><b>条件</b><span>対象者と期限を確認する</span></li></ol></section>'
+        '<div class="service-groups" id="service-groups">' + "".join(sections) + '</div>'
+        '<section class="service-hub-note"><h2>比較ページで分かること</h2><p>各ページでは、候補を一覧表で比べたあと、サービスごとの特徴・向く人・注意点を個別に説明します。広告の有無だけで順位は変えません。</p></section>'
+    )
 
 
 def render_category_intro(
@@ -2365,6 +2425,38 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .mini-grid { grid-template-columns:1fr 1fr; gap:10px; }
   .mini-grid div { padding:12px; }
 }
+.service-hub-hero { max-width:1120px; margin:28px auto 18px; padding:50px; border:1px solid #d5e2fa; border-radius:30px; background:radial-gradient(circle at 85% 20%,#e8e2ff 0,transparent 34%),linear-gradient(135deg,#eef6ff,#fff 62%); }
+.service-hub-hero h1 { max-width:780px; margin:10px 0 18px; font-size:54px; line-height:1.08; letter-spacing:-.055em; }
+.service-hub-hero > p { max-width:760px; font-size:18px; font-weight:700; line-height:1.9; }
+.service-quick-nav { display:flex; flex-wrap:wrap; gap:10px; margin-top:28px; }
+.service-quick-nav a { min-width:108px; padding:12px 18px; border:1px solid #bad1ff; border-radius:999px; background:#fff; color:#164da4; text-align:center; font-weight:800; text-decoration:none; }
+.service-hub-intro { display:grid; grid-template-columns:1.1fr 2fr; gap:20px; max-width:1120px; margin:0 auto 24px; padding:24px; border-radius:24px; background:#101b33; color:#fff; }
+.service-hub-intro > div span { display:block; color:#8db5ff; font-size:12px; font-weight:800; letter-spacing:.12em; }
+.service-hub-intro > div strong { display:block; margin-top:8px; font-family:var(--font-display); font-size:28px; line-height:1.35; }
+.service-hub-intro ol { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:0; padding:0; list-style:none; }
+.service-hub-intro li { padding:16px; border:1px solid rgba(255,255,255,.16); border-radius:16px; }
+.service-hub-intro li b,.service-hub-intro li span { display:block; }
+.service-hub-intro li b { color:#8db5ff; }
+.service-hub-intro li span { margin-top:5px; font-size:13px; line-height:1.5; }
+.service-groups { display:grid; gap:22px; max-width:1120px; margin:0 auto; }
+.service-group { display:grid; grid-template-columns:250px minmax(0,1fr); gap:22px; padding:24px; border:1px solid #dce4f2; border-radius:26px; background:#fff; }
+.service-group header { padding:8px; }
+.service-group header p { margin:0 0 8px; color:#2875ef; font-size:12px; font-weight:800; letter-spacing:.12em; }
+.service-group header h2 { display:block; margin:0 0 10px; padding:0; border:0; font-size:30px; }
+.service-group header h2::before { display:none; }
+.service-group header span { color:#596579; font-size:14px; line-height:1.7; }
+.service-choice-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.service-choice { display:flex; flex-direction:column; min-height:210px; padding:20px; border:1px solid #d9e4f6; border-radius:20px; color:#111827; text-decoration:none; transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease; }
+.service-choice:hover,.service-choice:focus-visible { transform:translateY(-3px); border-color:#6ba0ff; box-shadow:0 16px 30px rgba(31,70,130,.11); }
+.service-choice > span { color:#2875ef; font-size:11px; font-weight:800; letter-spacing:.1em; }
+.service-choice h3 { margin:9px 0 8px; font-size:25px; }
+.service-choice p { margin:0; color:#2e3c52; font-weight:700; line-height:1.65; }
+.service-choice small { margin-top:8px; color:#687386; }
+.service-choice b { margin-top:auto; padding-top:16px; color:#185ec9; font-size:13px; }
+.service-hub-note { max-width:1120px; margin:24px auto; padding:26px 30px; border-left:5px solid #2875ef; background:#f4f8ff; }
+.service-hub-note h2 { margin:0 0 8px; padding:0; border:0; font-size:26px; }
+.service-hub-note h2::before { display:none; }
+.service-hub-note p { margin:0; line-height:1.8; }
 .a8-banner-section { max-width:1120px; margin:32px auto; padding:24px; border:1px solid #d8e4ff; border-radius:24px; background:linear-gradient(135deg,#fff 0%,#f5f8ff 100%); text-align:left; }
 .a8-banner-section h2 { justify-content:center; margin:4px 0 18px; padding:0; font-size:26px; }
 .a8-banner-section h2::before { display:none; }
@@ -2383,6 +2475,20 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
 .a8-banner-copy dd { margin:0; color:#3f4b5e; font-size:12px; line-height:1.6; }
 .a8-ad-note { margin:16px 0 0; color:#667085; font-size:12px; }
 @media (max-width: 560px) {
+  .service-hub-hero { margin:14px 10px; padding:24px 18px; border-radius:22px; }
+  .service-hub-hero h1 { font-size:34px; }
+  .service-hub-hero > p { font-size:15px; }
+  .service-quick-nav { display:grid; grid-template-columns:1fr 1fr; }
+  .service-quick-nav a { min-width:0; min-height:44px; }
+  .service-hub-intro { grid-template-columns:1fr; margin:14px 10px; padding:18px; }
+  .service-hub-intro ol { grid-template-columns:1fr; }
+  .service-groups { margin:0 10px; }
+  .service-group { grid-template-columns:1fr; gap:12px; padding:16px; border-radius:22px; }
+  .service-group header h2 { font-size:27px; }
+  .service-choice-grid { grid-template-columns:1fr; }
+  .service-choice { min-height:190px; padding:17px; }
+  .service-choice h3 { font-size:23px; }
+  .service-hub-note { margin:20px 10px; padding:20px; }
   .brand { font-size:18px; }
   .category-hero { margin-bottom:14px; padding:17px; border-radius:22px; }
   .category-hero h1 { margin:6px 0 10px; font-size:33px; }
