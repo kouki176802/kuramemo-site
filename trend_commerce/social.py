@@ -22,6 +22,7 @@ PLATFORM_LIMITS = {"x": 280, "threads": 500, "instagram": 2200}
 PLATFORM_INTERVALS = {"x": 30, "threads": 45, "instagram": 180}
 URL_WEIGHT = 23
 URL_PATTERN = re.compile(r"https?://\S+")
+LOCAL_SITE_URL_PATTERN = re.compile(r"https?://(?:127\.0\.0\.1|localhost):\d+/(?P<path>[^\s]*)")
 JST = timezone(timedelta(hours=9))
 # 12 posts/day. Only the three marked slots send readers to the site.
 X_DAILY_SLOTS_JST = (
@@ -42,6 +43,60 @@ def _article_url(settings: Settings, slug: str) -> str:
     if settings.site_base_url:
         return "%s/%s.html" % (settings.site_base_url, slug)
     return "{ARTICLE_URL:%s}" % slug
+
+
+def _public_url_from_local(url: str, site_base_url: str) -> str:
+    """Convert a queued localhost article URL to the current public site URL."""
+    match = LOCAL_SITE_URL_PATTERN.fullmatch(url.strip())
+    if not match or not site_base_url:
+        return url
+    path = match.group("path")
+    fragment = ""
+    if "#" in path:
+        path, fragment = path.split("#", 1)
+        fragment = "#" + fragment
+    path = path.rstrip("/")
+    if path and not path.endswith(".html"):
+        path += ".html"
+    return "%s/%s%s" % (site_base_url.rstrip("/"), path, fragment)
+
+
+def refresh_queued_site_urls(settings: Settings) -> int:
+    """Rebase unsent social posts after the public domain changes.
+
+    Existing queue rows retain the URL used when they were generated.  This
+    refresh keeps old localhost rows from leaking into Discord or live posts.
+    Published/rejected rows are intentionally left as an audit trail.
+    """
+    if not settings.site_base_url:
+        return 0
+    updated = 0
+    with transaction(settings.database_path) as conn:
+        rows = conn.execute(
+            """
+            SELECT id, platform, post_text, target_url
+            FROM social_posts
+            WHERE status IN ('queued', 'ready', 'failed', 'media_required', 'experiment_hold')
+              AND (target_url LIKE 'http://127.0.0.1:%' OR target_url LIKE 'http://localhost:%')
+            """
+        ).fetchall()
+        for row in rows:
+            old_url = str(row["target_url"] or "")
+            new_url = _public_url_from_local(old_url, settings.site_base_url)
+            if new_url == old_url:
+                continue
+            post_text = str(row["post_text"] or "").replace(old_url, new_url)
+            fingerprint = stable_hash(str(row["platform"]), normalize_text(post_text), new_url)
+            conn.execute(
+                """
+                UPDATE social_posts
+                SET post_text=?, target_url=?, fingerprint=?, updated_at=CURRENT_TIMESTAMP
+                WHERE id=?
+                """,
+                (post_text, new_url, fingerprint, int(row["id"])),
+            )
+            updated += 1
+    return updated
 
 
 def _disclosure(platform: str) -> str:
@@ -464,6 +519,7 @@ def discord_ready_messages(settings: Settings, platform: str = "x", limit: int =
     # Discord is a delivery channel, not the final publish state.  Keep the
     # social post itself ready for the CEO to publish, but do not notify the
     # same row every time the scheduled job runs.
+    refresh_queued_site_urls(settings)
     with connect(settings.database_path) as conn:
         posts = [
             dict(row)
@@ -477,6 +533,7 @@ def discord_ready_messages(settings: Settings, platform: str = "x", limit: int =
                     OR (p.platform='instagram' AND p.status='media_required')
                   )
                   AND p.approval_status='approved'
+                  AND (p.target_url='' OR p.target_url LIKE ?)
                   AND NOT EXISTS (
                     SELECT 1 FROM social_post_attempts a
                     WHERE a.social_post_id=p.id
@@ -486,7 +543,7 @@ def discord_ready_messages(settings: Settings, platform: str = "x", limit: int =
                 ORDER BY p.scheduled_at, p.id
                 LIMIT ?
                 """,
-                (platform, max(1, limit)),
+                (platform, settings.site_base_url.rstrip("/") + "/%", max(1, limit)),
             )
         ]
     result = []

@@ -9,6 +9,7 @@ from trend_commerce.social import (
     approve_posts, discord_ready_messages, dispatch, enqueue_social_assets, export_queue, list_queue,
     import_manual_social_posts, mark_post_published, reject_post, reschedule_post, retry_post, set_media_urls,
     X_DAILY_SLOTS_JST, _fit_text, _next_schedule, _x_schedule_has_link, _x_weighted_len,
+    refresh_queued_site_urls,
 )
 
 
@@ -34,6 +35,29 @@ def seed_content(settings: Settings) -> int:
 
 
 class SocialTest(unittest.TestCase):
+    def test_refresh_queued_site_urls_rebases_local_wordpress_url(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            settings = settings_for(root)
+            settings = Settings(**{**settings.__dict__, "site_base_url": "https://kuramemo-mk.com"})
+            initialize(settings.database_path)
+            content_id = seed_content(settings)
+            old_url = "http://127.0.0.1:8080/heat-relief-items-comparison/#trend-evidence"
+            with transaction(settings.database_path) as conn:
+                conn.execute(
+                    """INSERT INTO social_posts(
+                        content_id, platform, variant_key, post_text, target_url, fingerprint,
+                        scheduled_at, status, approval_status
+                    ) VALUES (?, 'x', 'old', ?, ?, 'old', '2030-01-01T00:00:00+00:00', 'ready', 'approved')""",
+                    (content_id, "本文\n" + old_url, old_url),
+                )
+            self.assertEqual(1, refresh_queued_site_urls(settings))
+            post = list_queue(settings, platform="x")[0]
+            expected = "https://kuramemo-mk.com/heat-relief-items-comparison.html#trend-evidence"
+            self.assertEqual(expected, post["target_url"])
+            self.assertIn(expected, post["post_text"])
+            self.assertNotIn("127.0.0.1", post["post_text"])
+
     def test_queue_deduplicates_and_exports(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
