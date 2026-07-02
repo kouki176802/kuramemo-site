@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .analytics import add_metric, import_conversions
 from .affiliate_performance import import_affiliate_metrics, write_affiliate_performance_report
+from .affiliate_research import scan_affiliate_programs
 from .carousel import render_carousel
 from .catalog import import_offers, upsert_offer_csv
 from .collectors import add_manual_signal, collect_sources, load_sources, upsert_source
@@ -401,6 +402,10 @@ def _affiliate_report(args) -> None:
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+def _affiliate_program_scan() -> None:
+    print(json.dumps(scan_affiliate_programs(load_settings()), ensure_ascii=False, indent=2))
+
+
 def _trend_screen(args) -> None:
     settings = load_settings()
     result = screen_trend_opportunities(
@@ -614,6 +619,7 @@ def build_parser() -> argparse.ArgumentParser:
     affiliate_metrics.add_argument("--file", required=True)
     affiliate_metrics.add_argument("--source", default="ga4_csv")
     sub.add_parser("affiliate-report", help="商品別CTR・CVR・売上・EPCレポートを生成")
+    sub.add_parser("affiliate-program-scan", help="A8を含むASP案件の定期確認キューを生成")
 
     trend_screen = sub.add_parser("trend-screen", help="国別トレンドと楽天売れ筋を照合してSNS候補を生成")
     trend_screen.add_argument("--country", action="append", choices=["JP", "US", "KR"], help="対象国。複数指定可")
@@ -677,6 +683,7 @@ def main() -> None:
         "product-expand-cache": lambda: _product_expand_cache(args),
         "import-affiliate-metrics": lambda: _affiliate_metrics_import(args),
         "affiliate-report": lambda: _affiliate_report(args),
+        "affiliate-program-scan": lambda: _affiliate_program_scan(),
         "trend-screen": lambda: _trend_screen(args),
         "trend-enqueue-latest": lambda: _trend_enqueue_latest(args),
         "wordpress-check": lambda: _wordpress_check(),

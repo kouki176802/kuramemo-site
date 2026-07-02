@@ -41,6 +41,7 @@ def cycle_commands(
     ]
     if full_cycle:
         commands.extend([
+            [py, "-m", "trend_commerce", "affiliate-program-scan"],
             [py, "-m", "trend_commerce", "trend-screen", "--build-site"],
             [py, "-m", "trend_commerce", "product-ops", "--mode", "daily"],
             [py, "-m", "trend_commerce", "product-expand-cache", "--target", "8", "--refresh", "--build-site"],

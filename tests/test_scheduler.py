@@ -18,6 +18,7 @@ class SchedulerTest(unittest.TestCase):
         commands = [" ".join(command) for command in scheduler.cycle_commands(True)]
         joined = "\n".join(commands)
         self.assertIn("trend-screen --build-site", joined)
+        self.assertIn("affiliate-program-scan", joined)
         self.assertIn("product-ops --mode daily", joined)
         self.assertIn("product-expand-cache --target 8", joined)
         self.assertIn("social-ab-release", joined)

@@ -94,6 +94,10 @@ class StaticSiteTest(unittest.TestCase):
             services = root / "output" / "site" / "category-services.html"
             mobile_services = root / "output" / "site" / "mobile-carrier-services.html"
             investment_services = root / "output" / "site" / "investment-account-services.html"
+            hair_removal = root / "output" / "site" / "hair-removal-services.html"
+            internet_line = root / "output" / "site" / "internet-line-services.html"
+            streaming = root / "output" / "site" / "streaming-services.html"
+            credit_card = root / "output" / "site" / "credit-card-services.html"
             click_report = root / "output" / "site" / "click-report.html"
             not_found = root / "output" / "site" / "404.html"
             self.assertTrue(index.exists())
@@ -109,6 +113,14 @@ class StaticSiteTest(unittest.TestCase):
             self.assertTrue(services.exists())
             self.assertTrue(mobile_services.exists())
             self.assertTrue(investment_services.exists())
+            self.assertTrue(hair_removal.exists())
+            self.assertTrue(internet_line.exists())
+            self.assertTrue(streaming.exists())
+            self.assertTrue(credit_card.exists())
+            self.assertIn("解約条件", hair_removal.read_text(encoding="utf-8"))
+            self.assertIn("工事費", internet_line.read_text(encoding="utf-8"))
+            self.assertIn("同時視聴", streaming.read_text(encoding="utf-8"))
+            self.assertIn("リボ払い", credit_card.read_text(encoding="utf-8"))
             self.assertIn("楽天モバイル公式", mobile_services.read_text(encoding="utf-8"))
             self.assertIn("アフィリエイト状況", investment_services.read_text(encoding="utf-8"))
             self.assertIn("category-services.html", index_html)
