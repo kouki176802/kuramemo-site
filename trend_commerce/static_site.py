@@ -2365,14 +2365,22 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .mini-grid { grid-template-columns:1fr 1fr; gap:10px; }
   .mini-grid div { padding:12px; }
 }
-.a8-banner-section { max-width:1120px; margin:32px auto; padding:24px; border:1px solid #d8e4ff; border-radius:24px; background:linear-gradient(135deg,#fff 0%,#f5f8ff 100%); text-align:center; }
+.a8-banner-section { max-width:1120px; margin:32px auto; padding:24px; border:1px solid #d8e4ff; border-radius:24px; background:linear-gradient(135deg,#fff 0%,#f5f8ff 100%); text-align:left; }
 .a8-banner-section h2 { justify-content:center; margin:4px 0 18px; padding:0; font-size:26px; }
 .a8-banner-section h2::before { display:none; }
 .a8-ad-label { margin:0; color:#2563eb; font-size:12px; font-weight:800; letter-spacing:.12em; }
-.a8-banner-grid { display:flex; flex-wrap:wrap; justify-content:center; gap:18px; }
-.a8-banner-card { display:flex; align-items:center; justify-content:center; min-width:0; overflow:hidden; border-radius:16px; background:#fff; box-shadow:0 12px 28px rgba(31,48,79,.09); }
-.a8-banner-card > a { display:block; line-height:0; }
-.a8-banner-card img[width="300"] { display:block; max-width:100%; height:auto; }
+.a8-banner-intro { max-width:760px; margin:-6px auto 20px; color:#536176; text-align:center; line-height:1.8; }
+.a8-banner-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+.a8-banner-card { display:grid; grid-template-columns:210px minmax(0,1fr); align-items:center; gap:20px; min-width:0; padding:18px; overflow:hidden; border-radius:16px; background:#fff; box-shadow:0 12px 28px rgba(31,48,79,.09); }
+.a8-banner-media { display:flex; justify-content:center; min-width:0; }
+.a8-banner-media > a { display:block; line-height:0; }
+.a8-banner-media img[width="300"] { display:block; width:200px; max-width:100%; height:auto; }
+.a8-banner-copy h3 { margin:0 0 8px; font-size:20px; line-height:1.45; }
+.a8-banner-copy p { margin:0 0 12px; color:#39475c; font-size:14px; line-height:1.75; }
+.a8-banner-copy dl { display:grid; gap:8px; margin:0; }
+.a8-banner-copy dl div { display:grid; grid-template-columns:110px 1fr; gap:8px; padding-top:8px; border-top:1px solid #e7ecf5; }
+.a8-banner-copy dt { color:#2365d8; font-size:12px; font-weight:800; }
+.a8-banner-copy dd { margin:0; color:#3f4b5e; font-size:12px; line-height:1.6; }
 .a8-ad-note { margin:16px 0 0; color:#667085; font-size:12px; }
 @media (max-width: 560px) {
   .brand { font-size:18px; }
@@ -2415,7 +2423,11 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .a8-banner-section { margin:22px 0; padding:16px 10px; border-radius:20px; }
   .a8-banner-section h2 { font-size:22px; }
   .a8-banner-grid { display:grid; grid-template-columns:1fr; gap:12px; }
-  .a8-banner-card { width:100%; }
+  .a8-banner-card { grid-template-columns:140px minmax(0,1fr); width:100%; padding:12px; gap:12px; }
+  .a8-banner-media img[width="300"] { width:140px; }
+  .a8-banner-copy h3 { font-size:17px; }
+  .a8-banner-copy p { font-size:13px; }
+  .a8-banner-copy dl div { grid-template-columns:1fr; gap:3px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; }
