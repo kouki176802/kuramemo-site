@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List
 
 from .catalog import import_offers, list_offers
+from .a8_banners import render_a8_banner_block
 from .database import initialize
 from .models import Offer
 from .settings import ROOT, Settings
@@ -109,6 +110,7 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
                 + '<aside class="article-next"><span>次に見る</span><strong>候補を比べて確認する</strong>'
                 + '<a class="button" href="%s.html">比較ガイドを見る</a></aside></article>' % html.escape(target_slug, quote=True)
             )
+        body += render_a8_banner_block(page.slug)
         html_doc = render_layout(
             page.title, body, page.slug, slugs, settings.site_base_url,
             settings.ga4_measurement_id, settings.gsc_verification,
@@ -2363,6 +2365,15 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .mini-grid { grid-template-columns:1fr 1fr; gap:10px; }
   .mini-grid div { padding:12px; }
 }
+.a8-banner-section { max-width:1120px; margin:32px auto; padding:24px; border:1px solid #d8e4ff; border-radius:24px; background:linear-gradient(135deg,#fff 0%,#f5f8ff 100%); text-align:center; }
+.a8-banner-section h2 { justify-content:center; margin:4px 0 18px; padding:0; font-size:26px; }
+.a8-banner-section h2::before { display:none; }
+.a8-ad-label { margin:0; color:#2563eb; font-size:12px; font-weight:800; letter-spacing:.12em; }
+.a8-banner-grid { display:flex; flex-wrap:wrap; justify-content:center; gap:18px; }
+.a8-banner-card { display:flex; align-items:center; justify-content:center; min-width:0; overflow:hidden; border-radius:16px; background:#fff; box-shadow:0 12px 28px rgba(31,48,79,.09); }
+.a8-banner-card > a { display:block; line-height:0; }
+.a8-banner-card img[width="300"] { display:block; max-width:100%; height:auto; }
+.a8-ad-note { margin:16px 0 0; color:#667085; font-size:12px; }
 @media (max-width: 560px) {
   .brand { font-size:18px; }
   .category-hero { margin-bottom:14px; padding:17px; border-radius:22px; }
@@ -2401,6 +2412,10 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .offer-name { min-height:0; }
   .offer-card .button { width:100%; }
   .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .a8-banner-section { margin:22px 0; padding:16px 10px; border-radius:20px; }
+  .a8-banner-section h2 { font-size:22px; }
+  .a8-banner-grid { display:grid; grid-template-columns:1fr; gap:12px; }
+  .a8-banner-card { width:100%; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; }
