@@ -36,6 +36,58 @@ ARTICLE_TARGETS = {
 }
 
 
+SERVICE_PAGE_META = {
+    "ai-school-services": {
+        "label": "AI・キャリア",
+        "lead": "学習内容だけでなく、質問対応・成果物・支援期限・解約条件まで比べる専門ガイド",
+        "questions": ["何を作れるようになりたいか", "個別指導は必要か", "総額と返金条件は許容できるか"],
+        "checks": ["到達目標", "質問・添削範囲", "転職・副業支援", "総額・返金条件"],
+    },
+    "mobile-carrier-services": {
+        "label": "スマホ通信",
+        "lead": "月額だけでなく、生活圏の電波・データ量・通話・店舗対応・海外利用まで比べる専門ガイド",
+        "questions": ["毎月何GB使うか", "通話と店舗対応は必要か", "生活圏でつながるか"],
+        "checks": ["実質月額", "通信量・制限", "通話・サポート", "エリア・海外利用"],
+    },
+    "internet-line-services": {
+        "label": "自宅インターネット",
+        "lead": "月額の安さだけでなく、工事・割引終了後・解約時までの総額で比べる専門ガイド",
+        "questions": ["建物で利用できるか", "工事と開通待ちは許容できるか", "解約までの総額はいくらか"],
+        "checks": ["提供エリア", "工事費・初期費用", "通常月額", "解約金・残債"],
+    },
+    "streaming-services": {
+        "label": "動画・エンタメ",
+        "lead": "作品数の大きさではなく、見たい作品・同時視聴・追加課金・解約方法で比べる専門ガイド",
+        "questions": ["絶対に見たい作品は何か", "何台で同時視聴するか", "月額以外の課金はあるか"],
+        "checks": ["作品傾向", "月額・追加課金", "同時視聴", "無料期間・解約"],
+    },
+    "hair-removal-services": {
+        "label": "美容・脱毛",
+        "lead": "広告の月額表示ではなく、方式・対象部位・必要回数・追加費用・中途解約まで比べる専門ガイド",
+        "questions": ["医療・サロン・家庭用のどれか", "対象部位と期限は決まっているか", "総額と通いやすさは合うか"],
+        "checks": ["方式・対象部位", "回数・期間", "総額・追加費用", "予約・解約条件"],
+    },
+    "credit-card-services": {
+        "label": "カード・決済",
+        "lead": "最大還元率ではなく、普段の支払先・年会費・還元条件・保険まで比べる専門ガイド",
+        "questions": ["最も支出が多い店はどこか", "年会費を払う価値があるか", "還元条件を無理なく満たせるか"],
+        "checks": ["基本還元率", "年会費", "優遇条件", "保険・付帯特典"],
+    },
+    "investment-account-services": {
+        "label": "資産形成",
+        "lead": "キャンペーンではなく、NISA・取扱商品・コスト・操作性・サポートで比べる専門ガイド",
+        "questions": ["何に投資する予定か", "NISAをどう使うか", "操作とサポートは自分に合うか"],
+        "checks": ["NISA対応", "商品・手数料", "積立・ポイント", "ツール・サポート"],
+    },
+    "fortune-consultation-services": {
+        "label": "相談サービス",
+        "lead": "初回特典だけでなく、1分料金・通話料・相談方法・利用上限を決めてから選ぶ専門ガイド",
+        "questions": ["相談内容を一文で言えるか", "上限時間と予算はいくらか", "電話・チャットのどちらがよいか"],
+        "checks": ["1分料金", "通話・追加料金", "相談方法", "特典上限・退会"],
+    },
+}
+
+
 def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dict[str, object]:
     """Build a small static comparison site.
 
@@ -87,6 +139,8 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
             body = _home_landing(offer_assets, trend_rows)
         if page.slug == "category-services":
             body = render_services_hub()
+        if page.slug in SERVICE_PAGE_META:
+            body = render_service_detail(page, body)
         if category_body_prefix:
             body = category_body_prefix
         if page.kind == "comparison":
@@ -454,6 +508,62 @@ def render_services_hub() -> str:
         '<ol><li><b>目的</b><span>困りごとを一つに絞る</span></li><li><b>総額</b><span>初期費用から解約まで見る</span></li><li><b>条件</b><span>対象者と期限を確認する</span></li></ol></section>'
         '<div class="service-groups" id="service-groups">' + "".join(sections) + '</div>'
         '<section class="service-hub-note"><h2>比較ページで分かること</h2><p>各ページでは、候補を一覧表で比べたあと、サービスごとの特徴・向く人・注意点を個別に説明します。広告の有無だけで順位は変えません。</p></section>'
+    )
+
+
+def render_service_detail(page: SitePage, article_body: str) -> str:
+    meta = SERVICE_PAGE_META[page.slug]
+    headings = [
+        _clean_heading_text(line[3:].strip())
+        for line in page.markdown.splitlines()
+        if line.startswith("## ")
+    ]
+    toc = "".join(
+        '<a href="#%s">%s</a>' % (html.escape(_heading_id(item), quote=True), html.escape(item))
+        for item in headings[:7]
+    )
+    comparison_heading = next((item for item in headings if "比較表" in item or item == "候補比較"), headings[0] if headings else "section")
+    detail_heading = next((item for item in headings if "候補ごと" in item or "掲載サービス" in item), headings[-1] if headings else "section")
+    questions = "".join(
+        '<li><b>%02d</b><span>%s</span></li>' % (index, html.escape(question))
+        for index, question in enumerate(meta["questions"], 1)
+    )
+    checks = "".join('<span>%s</span>' % html.escape(item) for item in meta["checks"])
+    faq_items = "".join(
+        '<details><summary>%s</summary><p>このページでは、%sを同じ条件にそろえ、比較表と各候補の説明から確認できます。契約直前には公式ページの最新情報も確認してください。</p></details>' % (
+            html.escape(question), html.escape("・".join(meta["checks"])),
+        )
+        for question in meta["questions"]
+    )
+    return """
+<article class="service-detail">
+  <header class="service-detail-hero">
+    <div>
+      <p class="service-detail-label">%s / 専門比較ガイド</p>
+      <h1>%s</h1>
+      <p class="service-detail-lead">%s</p>
+      <div class="service-detail-actions"><a class="button" href="#%s">比較表を見る</a><a class="button button-secondary" href="#%s">各社の詳細を見る</a></div>
+    </div>
+    <aside>
+      <small>最終確認</small><strong>%s</strong>
+      <p>公式情報・料金条件・申込時の注意点を確認</p>
+      <a href="editorial-policy.html">調査と掲載の方針</a>
+    </aside>
+  </header>
+  <section class="service-decision-flow"><header><small>3 STEP</small><h2>契約前に先に決めること</h2></header><ol>%s</ol></section>
+  <div class="service-check-strip">%s</div>
+  <nav class="service-toc" aria-label="このページの目次"><b>このページで分かること</b>%s</nav>
+  <div class="service-detail-content">%s</div>
+  <section class="service-faq"><small>BEFORE YOU APPLY</small><h2>申込前によくある確認</h2>%s</section>
+  <aside class="service-editor-note">
+    <div><small>EDITORIAL POLICY</small><h2>順位より契約条件を優先</h2></div>
+    <p>広告提携の有無だけで候補の順番を変えません。料金やキャンペーンは変わるため、公式ページで最新条件を確認し、不要なオプションを外した総額で判断してください。</p>
+  </aside>
+</article>
+""" % (
+        html.escape(meta["label"]), html.escape(page.title), html.escape(meta["lead"]),
+        html.escape(_heading_id(comparison_heading), quote=True), html.escape(_heading_id(detail_heading), quote=True),
+        date.today().isoformat().replace("-", "."), questions, checks, toc, article_body, faq_items,
     )
 
 
@@ -1485,7 +1595,7 @@ def render_layout(
   <script type="application/ld+json">%s</script>
   %s
   %s
-  <link rel="stylesheet" href="styles.css?v=20260627b">
+  <link rel="stylesheet" href="styles.css?v=20260703a">
   <script src="click-tracker.js" defer></script>
 </head>
 <body class="%s">
@@ -1504,7 +1614,7 @@ def render_layout(
 </html>
 """ % (
         html.escape(document_title), html.escape(description, quote=True), robots_meta, canonical,
-        "article" if slug.endswith("comparison") else "website", html.escape(document_title, quote=True),
+        "article" if slug.endswith("comparison") or slug in SERVICE_PAGE_META else "website", html.escape(document_title, quote=True),
         html.escape(description, quote=True), og_url, html.escape(document_title, quote=True),
         html.escape(description, quote=True), schema, gsc, ga4, body_class, nav, main_body,
     )
@@ -1517,11 +1627,13 @@ def _meta_description(title: str, slug: str) -> str:
         return "%sの商品と選び方を用途・価格・レビュー・注意点から整理します" % title
     if slug.endswith("comparison"):
         return "%sを用途・価格・レビュー・注意点から比較し自分に合う候補を選べます" % title.split("｜", 1)[0]
+    if slug in SERVICE_PAGE_META:
+        return "%s。料金・契約期間・解約条件・向いている人を比較し、申込前の注意点まで確認できます" % SERVICE_PAGE_META[slug]["lead"]
     return "%sについて、くらメモの運営方針と確認事項を案内します" % title
 
 
 def _schema_json(title: str, description: str, canonical_url: str, slug: str) -> str:
-    page_type = "Article" if slug.endswith("comparison") else ("CollectionPage" if slug.startswith("category-") else "WebPage")
+    page_type = "Article" if slug.endswith("comparison") or slug in SERVICE_PAGE_META else ("CollectionPage" if slug.startswith("category-") else "WebPage")
     page: Dict[str, object] = {
         "@type": page_type,
         "name": title,
@@ -1536,6 +1648,15 @@ def _schema_json(title: str, description: str, canonical_url: str, slug: str) ->
         page["url"] = canonical_url
         page["mainEntityOfPage"] = canonical_url
     graph: List[Dict[str, object]] = [page]
+    if slug in SERVICE_PAGE_META:
+        meta = SERVICE_PAGE_META[slug]
+        graph.append({
+            "@type": "FAQPage",
+            "mainEntity": [
+                {"@type": "Question", "name": question, "acceptedAnswer": {"@type": "Answer", "text": "比較表と候補ごとの説明で、%sを公式条件とあわせて確認してください。" % "・".join(meta["checks"])}}
+                for question in meta["questions"]
+            ],
+        })
     if canonical_url and slug != "index":
         base = canonical_url.rsplit("/", 1)[0]
         category_slug = _active_nav_slug(slug)
@@ -1615,6 +1736,7 @@ def _active_nav_slug(slug: str) -> str:
         "mobile-carrier-services": "category-services",
         "investment-account-services": "category-services",
     }
+    category_by_page.update({service_slug: "category-services" for service_slug in SERVICE_PAGE_META})
     if slug in ARTICLE_TARGETS:
         category = ARTICLE_TARGETS[slug][1]
         article_categories = {
@@ -2462,6 +2584,52 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
 .service-hub-note h2 { margin:0 0 8px; padding:0; border:0; font-size:26px; }
 .service-hub-note h2::before { display:none; }
 .service-hub-note p { margin:0; line-height:1.8; }
+.service-detail { max-width:1120px; margin:0 auto; }
+.service-detail-hero { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(250px,.7fr); gap:24px; margin:0 0 22px; padding:42px; border:1px solid #d6e3fa; border-radius:30px; background:radial-gradient(circle at 88% 15%,#e9e2ff 0,transparent 32%),linear-gradient(135deg,#eef6ff,#fff 64%); }
+.service-detail-label { margin:0; color:#2875ef; font-size:12px; font-weight:900; letter-spacing:.12em; }
+.service-detail-hero h1 { margin:10px 0 14px; font-size:50px; line-height:1.08; letter-spacing:-.045em; }
+.service-detail-lead { max-width:720px; margin:0; color:#26364c; font-size:17px; font-weight:700; line-height:1.85; }
+.service-detail-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; }
+.service-detail-hero aside { align-self:stretch; padding:24px; border:1px solid #cfddf6; border-radius:22px; background:rgba(255,255,255,.76); }
+.service-detail-hero aside small,.service-detail-hero aside strong { display:block; }
+.service-detail-hero aside small { color:#2875ef; font-size:11px; font-weight:900; letter-spacing:.1em; }
+.service-detail-hero aside strong { margin:12px 0 6px; font-family:var(--font-display); font-size:31px; }
+.service-detail-hero aside p { color:#526176; font-size:13px; line-height:1.7; }
+.service-detail-hero aside a { color:#175dbd; font-size:13px; font-weight:800; }
+.service-decision-flow { display:grid; grid-template-columns:250px minmax(0,1fr); gap:20px; margin:0 0 14px; padding:24px; border-radius:24px; background:#101b33; color:#fff; }
+.service-decision-flow header small { color:#8db5ff; font-weight:900; letter-spacing:.12em; }
+.service-decision-flow header h2 { margin:7px 0 0; padding:0; border:0; color:#fff; font-size:27px; }
+.service-decision-flow header h2::before { display:none; }
+.service-decision-flow ol { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:0; padding:0; list-style:none; }
+.service-decision-flow li { padding:15px; border:1px solid rgba(255,255,255,.16); border-radius:16px; }
+.service-decision-flow li b,.service-decision-flow li span { display:block; }
+.service-decision-flow li b { color:#8db5ff; font-size:12px; }
+.service-decision-flow li span { margin-top:6px; font-size:13px; font-weight:700; line-height:1.55; }
+.service-check-strip { display:grid; grid-template-columns:repeat(4,1fr); margin-bottom:18px; border:1px solid #d9e4f6; border-radius:18px; overflow:hidden; }
+.service-check-strip span { padding:13px; border-right:1px solid #d9e4f6; background:#f7faff; text-align:center; font-size:13px; font-weight:800; }
+.service-check-strip span:last-child { border-right:0; }
+.service-toc { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 22px; padding:16px 18px; border-left:4px solid #2875ef; background:#f3f7ff; }
+.service-toc b { margin-right:8px; }
+.service-toc a { padding:7px 10px; border:1px solid #cfddf6; border-radius:999px; background:#fff; color:#245da8; font-size:12px; font-weight:800; text-decoration:none; }
+.service-detail-content { max-width:940px; margin:0 auto; }
+.service-detail-content > h1 { display:none; }
+.service-detail-content h2 { margin-top:44px; }
+.service-detail-content h3 { margin-top:30px; padding:17px 20px; border-left:4px solid #2875ef; background:#f6f9ff; font-size:25px; }
+.service-detail-content .table-wrap { margin:18px 0 28px; border:1px solid #d8e3f5; border-radius:18px; }
+.service-detail-content table { min-width:780px; }
+.service-detail-content td,.service-detail-content th { padding:15px; vertical-align:top; }
+.service-editor-note { display:grid; grid-template-columns:280px 1fr; gap:24px; margin:46px 0 10px; padding:28px; border-top:3px solid #111827; background:#f7f4ed; }
+.service-editor-note small { color:#9b641d; font-weight:900; letter-spacing:.12em; }
+.service-editor-note h2 { margin:7px 0 0; padding:0; border:0; font-size:26px; }
+.service-editor-note h2::before { display:none; }
+.service-editor-note p { margin:0; line-height:1.9; }
+.service-faq { max-width:940px; margin:42px auto 0; padding:26px; border:1px solid #d8e3f5; border-radius:22px; background:#fff; }
+.service-faq > small { color:#2875ef; font-weight:900; letter-spacing:.12em; }
+.service-faq > h2 { margin:7px 0 18px; padding:0; border:0; font-size:28px; }
+.service-faq > h2::before { display:none; }
+.service-faq details { border-top:1px solid #e1e7f0; }
+.service-faq summary { padding:16px 2px; cursor:pointer; font-weight:800; }
+.service-faq details p { margin:0 0 18px; color:#48566b; line-height:1.8; }
 .a8-banner-section { max-width:1120px; margin:32px auto; padding:24px; border:1px solid #d8e4ff; border-radius:24px; background:linear-gradient(135deg,#fff 0%,#f5f8ff 100%); text-align:left; }
 .a8-banner-section h2 { justify-content:center; margin:4px 0 18px; padding:0; font-size:26px; }
 .a8-banner-section h2::before { display:none; }
@@ -2494,6 +2662,20 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .service-choice { min-height:190px; padding:17px; }
   .service-choice h3 { font-size:23px; }
   .service-hub-note { margin:20px 10px; padding:20px; }
+  .service-detail-hero { grid-template-columns:1fr; padding:22px 17px; border-radius:22px; }
+  .service-detail-hero h1 { font-size:34px; overflow-wrap:normal; word-break:keep-all; }
+  .service-detail-lead { font-size:15px; }
+  .service-decision-flow { grid-template-columns:1fr; padding:18px; }
+  .service-decision-flow ol { grid-template-columns:1fr; }
+  .service-check-strip { grid-template-columns:1fr 1fr; }
+  .service-check-strip span:nth-child(2) { border-right:0; }
+  .service-check-strip span:nth-child(-n+2) { border-bottom:1px solid #d9e4f6; }
+  .service-toc { align-items:stretch; }
+  .service-toc b { width:100%; }
+  .service-toc a { flex:1 1 44%; text-align:center; }
+  .service-detail-content h2 { margin-top:34px; font-size:27px; }
+  .service-detail-content h3 { font-size:21px; }
+  .service-editor-note { grid-template-columns:1fr; gap:12px; padding:20px; }
   .brand { font-size:18px; }
   .category-hero { margin-bottom:14px; padding:17px; border-radius:22px; }
   .category-hero h1 { margin:6px 0 10px; font-size:33px; }

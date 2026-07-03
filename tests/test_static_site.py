@@ -157,14 +157,14 @@ class StaticSiteTest(unittest.TestCase):
             build_static_site(settings)
             site = root / "output" / "site"
             index = (site / "index.html").read_text(encoding="utf-8")
-            self.assertIn('<link rel="canonical" href="https://kuramemo.example/index.html">', index)
+            self.assertIn('<link rel="canonical" href="https://kuramemo.example/">', index)
             self.assertIn('application/ld+json', index)
             self.assertIn('og:title', index)
             self.assertIn('G-ABC123', index)
             self.assertIn('google-site-verification', index)
             self.assertIn('affiliate_click', (site / "click-tracker.js").read_text(encoding="utf-8"))
             self.assertIn('https://kuramemo.example/sitemap.xml', (site / "robots.txt").read_text(encoding="utf-8"))
-            self.assertIn('https://kuramemo.example/index.html', (site / "sitemap.xml").read_text(encoding="utf-8"))
+            self.assertIn('<loc>https://kuramemo.example/</loc>', (site / "sitemap.xml").read_text(encoding="utf-8"))
             self.assertNotIn('https://kuramemo.example/404.html', (site / "sitemap.xml").read_text(encoding="utf-8"))
 
     def test_upsert_offer_csv_replaces_existing_offer(self):
