@@ -29,7 +29,7 @@ add_filter('body_class', static function ($classes) {
 function kuramemo_categories() {
     return [
         'AI・ガジェット', '美容', 'フィットネス', '健康', '季節・暮らし',
-        '防災・備蓄', '家事・時短', '旅行・外出', 'サービス',
+        '防災・備蓄', '家事・時短', '旅行・外出', '通信・学び・お金',
     ];
 }
 
@@ -43,7 +43,7 @@ function kuramemo_nav_items() {
         '防災・備蓄' => 'category-disaster-preparedness',
         '家事・時短' => 'category-housework-timesaving',
         '旅行・外出' => 'category-travel-outdoor',
-        'サービス' => 'category-services',
+        '通信・学び・お金' => 'category-services',
     ];
 }
 

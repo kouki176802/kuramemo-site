@@ -22,6 +22,25 @@
 4. sitemap.xml をSearch Consoleへ送信
 5. 代表ページをURL検査し、リッチリザルトテストも実施
 
+## 2026-07-03 公開サイト確認
+
+- `https://kuramemo-mk.com/` は200で応答
+- robots.txtはクロールを許可
+- sitemap.xmlは公開済み
+- wwwは非wwwへ301転送
+- トップのcanonicalとサイトマップURLを `https://kuramemo-mk.com/` に統一
+
+## Search Consoleで行う作業
+
+1. `kuramemo-mk.com` をドメインプロパティとして登録
+2. お名前.com DNSへGoogle指定のTXTレコードを追加
+3. `https://kuramemo-mk.com/sitemap.xml` を送信
+4. URL検査で `https://kuramemo-mk.com/` を確認
+5. 「インデックス登録をリクエスト」を実行
+6. 次に主要カテゴリと注目商品の代表ページを数件だけリクエスト
+
+サイトマップ送信は発見を助けますが、掲載や順位を保証するものではありません。内容が薄い候補一覧だけのページを増やさず、検索意図ごとに比較軸と個別説明を追加します。
+
 ローカル表示中は誤って検索登録されないよう noindex と robots.txt の拒否を維持する。
 
 ## 公式資料

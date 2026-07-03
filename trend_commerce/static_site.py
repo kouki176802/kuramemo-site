@@ -1435,7 +1435,7 @@ def render_layout(
         ("category-disaster-preparedness", "防災・備蓄"),
         ("category-housework-timesaving", "家事・時短"),
         ("category-travel-outdoor", "旅行・外出"),
-        ("category-services", "サービス"),
+        ("category-services", "通信・学び・お金"),
         ("advertising-policy", "広告方針"),
     ]
     slugs_set = set(slugs)
@@ -1454,7 +1454,11 @@ def render_layout(
     document_title = "くらメモ" if slug == "index" else "%s | くらメモ" % title
     description = _meta_description(title, slug)
     page_name = "index.html" if slug == "index" else "%s.html" % slug
-    canonical_url = "%s/%s" % (site_base_url.rstrip("/"), page_name) if site_base_url else ""
+    canonical_url = (
+        site_base_url.rstrip("/") + "/"
+        if site_base_url and slug == "index"
+        else "%s/%s" % (site_base_url.rstrip("/"), page_name) if site_base_url else ""
+    )
     canonical = '<link rel="canonical" href="%s">' % html.escape(canonical_url, quote=True) if canonical_url else ""
     robots_meta = '<meta name="robots" content="index,follow,max-image-preview:large">' if site_base_url else '<meta name="robots" content="noindex,nofollow">'
     og_url = '<meta property="og:url" content="%s">' % html.escape(canonical_url, quote=True) if canonical_url else ""
@@ -1540,10 +1544,10 @@ def _schema_json(title: str, description: str, canonical_url: str, slug: str) ->
             "category-fitness": "フィットネス", "category-health": "健康",
             "category-lifestyle-seasonal": "季節・暮らし", "category-disaster-preparedness": "防災・備蓄",
             "category-housework-timesaving": "家事・時短", "category-travel-outdoor": "旅行・外出",
-            "category-services": "サービス",
+            "category-services": "通信・学び・お金",
         }
         items: List[Dict[str, object]] = [
-            {"@type": "ListItem", "position": 1, "name": "トップ", "item": "%s/index.html" % base},
+            {"@type": "ListItem", "position": 1, "name": "トップ", "item": "%s/" % base},
         ]
         if category_slug in labels and category_slug != slug:
             items.append({
@@ -1583,7 +1587,8 @@ def _write_sitemap(target: Path, site_base_url: str, rendered: List[str]) -> Pat
         path = Path(raw)
         if path.suffix != ".html":
             continue
-        urls.append("<url><loc>%s/%s</loc><lastmod>%s</lastmod></url>" % (html.escape(base), html.escape(path.name), today))
+        location = "%s/" % base if path.name == "index.html" else "%s/%s" % (base, path.name)
+        urls.append("<url><loc>%s</loc><lastmod>%s</lastmod></url>" % (html.escape(location), today))
     content = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">%s</urlset>\n' % "".join(urls)
     path = target / "sitemap.xml"
     path.write_text(content, encoding="utf-8")
