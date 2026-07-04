@@ -375,7 +375,7 @@ def _kurara_image(kind: str, title: str = "") -> str:
 
 
 def _mikeru_image(kind: str = "check", title: str = "") -> str:
-    filename = "mikeru-recommend-v1.png" if kind == "recommend" else "mikeru-check-v1.png"
+    filename = "mikeru-recommend-v2.png" if kind == "recommend" else "mikeru-check-v1.png"
     label = title or ("候補を案内するミケル" if kind == "recommend" else "条件を確認するミケル")
     return '<img src="assets/brand/%s" alt="%s" loading="lazy">' % (
         filename, html.escape(label, quote=True),
@@ -2908,6 +2908,8 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .category-product-card { grid-template-columns:104px minmax(0, 1fr); }
   .category-product-image .offer-visual { height:104px; }
   .category-playbook { grid-template-columns:1fr; padding:18px; }
+  .service-search-answer { grid-template-columns:1fr; padding:20px; }
+  .service-search-answer header h2 { max-width:680px; font-size:23px; line-height:1.45; }
   .category-playbook ul { grid-template-columns:1fr; }
   .article-card.featured { grid-column:auto; }
   .comparison-index, .page-card { padding:20px; border-radius:22px; }
@@ -2977,9 +2979,9 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
 .service-detail-hero aside strong { margin:12px 0 6px; font-family:var(--font-display); font-size:31px; }
 .service-detail-hero aside p { color:#526176; font-size:13px; line-height:1.7; }
 .service-detail-hero aside a { color:#175dbd; font-size:13px; font-weight:800; }
-.service-search-answer { display:grid; grid-template-columns:minmax(260px,.8fr) minmax(0,1.8fr); gap:22px; margin:0 0 16px; padding:26px; border:1px solid #d8e4f8; border-radius:24px; background:#fff; }
+.service-search-answer { display:grid; grid-template-columns:minmax(360px,1.2fr) minmax(0,1.6fr); gap:22px; margin:0 0 16px; padding:26px; border:1px solid #d8e4f8; border-radius:24px; background:#fff; }
 .service-search-answer header small,.service-method small,.service-glossary > small { color:#2875ef; font-size:11px; font-weight:900; letter-spacing:.12em; }
-.service-search-answer header h2 { margin:7px 0 9px; padding:0; border:0; font-size:27px; line-height:1.35; }
+.service-search-answer header h2 { margin:7px 0 9px; padding:0; border:0; font-size:clamp(21px,2.1vw,25px); line-height:1.48; letter-spacing:-.025em; text-wrap:balance; word-break:auto-phrase; }
 .service-search-answer header h2::before { display:none; }
 .service-search-answer header p { margin:0; color:#5b687c; font-size:13px; line-height:1.7; }
 .service-answer-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }

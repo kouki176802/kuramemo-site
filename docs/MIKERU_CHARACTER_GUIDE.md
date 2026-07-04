@@ -27,6 +27,6 @@
 
 - キャラクターシート: `site_content/assets/brand/mikeru-character-sheet-v1.png`
 - 条件確認: `site_content/assets/brand/mikeru-check-v1.png`
-- おすすめ案内: `site_content/assets/brand/mikeru-recommend-v1.png`
+- おすすめ案内（画像内吹き出しなし）: `site_content/assets/brand/mikeru-recommend-v2.png`
 - くららとの共演アイコン: `site_content/assets/brand/kurara-mikeru-duo-icon-v1.png`
 - くららとの共演ヘッダー: `site_content/assets/brand/kurara-mikeru-duo-header-v1.png`
