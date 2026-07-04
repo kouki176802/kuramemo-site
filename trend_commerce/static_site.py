@@ -356,11 +356,37 @@ def render_mascot_callout(message: str, variant: str = "default") -> str:
     """A compact, reusable guide character callout with accessible text."""
     return (
         '<aside class="mascot-callout mascot-%s" aria-label="くらメモ案内役 くららのポイント">'
-        '<div class="mascot-portrait"><img src="assets/brand/kurara-character-sheet.png" '
+        '<div class="mascot-portrait"><img src="assets/brand/kurara-guide-portrait-v2.png" '
         'alt="くらメモの案内役 くらら"></div>'
         '<div class="mascot-bubble"><small>KURARA / TREND GUIDE</small>'
         '<p>%s</p><a href="about.html#案内役くらら">くららについて</a></div></aside>'
     ) % (html.escape(variant, quote=True), html.escape(message))
+
+
+def _service_mascot_message(slug: str) -> str:
+    messages = {
+        "ai-school-services": "AIスクールは 学べる内容だけでなく 作りたい成果物と質問対応の範囲を先に決めると選びやすいです",
+        "mobile-carrier-services": "スマホ回線は 月額だけでなく普段使う場所と時間帯の通信品質まで確認しましょう",
+        "internet-line-services": "光回線は 特典額より工事費と必須オプションを含む実質負担で比べましょう",
+        "streaming-services": "動画配信は作品数より 見たい独占作品と追加課金の有無を先に確認しましょう",
+        "hair-removal-services": "脱毛は表示価格だけでなく 対象部位 追加費用 通える院まで含めた総額で見ましょう",
+        "credit-card-services": "カードは最大還元率より 自分が普段使う店で条件を満たせるかを確認しましょう",
+        "investment-account-services": "証券口座は特典より 取扱商品 手数料 サポートを自分の運用方法に合わせて選びましょう",
+        "fortune-consultation-services": "相談サービスは初回特典だけでなく 1分料金と通話料 利用上限を先に決めましょう",
+    }
+    return messages.get(slug, "料金だけで決めず 契約後に困りやすい条件まで一緒に確認します")
+
+
+def _service_display_title(title: str) -> str:
+    suffix = "おすすめ比較 2026"
+    if suffix in title:
+        subject = title.split(suffix, 1)[0].strip()
+        return (
+            '<span class="no-break">%s</span><wbr>'
+            '<span class="no-break">おすすめ比較</span> '
+            '<span class="no-break">2026</span>'
+        ) % html.escape(subject)
+    return html.escape(title)
 
 
 def render_about_mascot(article_body: str) -> str:
@@ -823,10 +849,10 @@ def render_service_detail(page: SitePage, article_body: str) -> str:
   </aside>
 </article>
 """ % (
-        html.escape(meta["label"]), html.escape(page.title), html.escape(meta["lead"]),
+        html.escape(meta["label"]), _service_display_title(page.title), html.escape(meta["lead"]),
         html.escape(_heading_id(comparison_heading), quote=True), html.escape(_heading_id(detail_heading), quote=True),
         date.today().isoformat().replace("-", "."),
-        render_mascot_callout("料金だけで決めず 契約後に困りやすい条件まで一緒に確認します", "service"),
+        render_mascot_callout(_service_mascot_message(page.slug), "service"),
         _render_service_expertise(page.slug), questions,
         _service_decision_guide(page.slug), checks, toc, article_body,
         _service_evidence_note(page.slug), faq_items,
@@ -2439,7 +2465,7 @@ a { color: var(--accent); }
 .brand { display:flex; flex-direction:column; line-height:1.05; font-family:var(--display); font-weight:900; text-decoration:none; color:var(--ink); letter-spacing:-.04em; font-size:20px; }
 .mascot-callout { display:grid; grid-template-columns:104px minmax(0,1fr); align-items:end; gap:16px; max-width:960px; margin:22px auto 30px; padding:12px 18px 12px 12px; border:1px solid #cfe0ff; border-radius:24px; background:linear-gradient(120deg,#f4f8ff,#faf7ff); box-shadow:0 14px 34px rgba(47,124,246,.10); }
 .mascot-portrait { align-self:stretch; min-height:112px; overflow:hidden; border-radius:18px; background:#eaf1ff; }
-.mascot-portrait img { width:100%; height:100%; min-height:112px; object-fit:cover; object-position:71% 17%; transform:scale(1.8); }
+.mascot-portrait img { display:block; width:100%; height:100%; min-height:112px; object-fit:cover; object-position:center 22%; }
 .mascot-bubble { position:relative; align-self:center; padding:13px 16px; border-radius:18px; background:#fff; }
 .mascot-bubble::before { content:""; position:absolute; left:-10px; top:30px; border-width:9px 10px 9px 0; border-style:solid; border-color:transparent #fff transparent transparent; }
 .mascot-bubble small { color:#2f7cf6; font-size:11px; font-weight:900; letter-spacing:.12em; }
@@ -2884,6 +2910,7 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
 .service-detail-hero { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(250px,.7fr); gap:24px; margin:0 0 22px; padding:42px; border:1px solid #d6e3fa; border-radius:30px; background:radial-gradient(circle at 88% 15%,#e9e2ff 0,transparent 32%),linear-gradient(135deg,#eef6ff,#fff 64%); }
 .service-detail-label { margin:0; color:#2875ef; font-size:12px; font-weight:900; letter-spacing:.12em; }
 .service-detail-hero h1 { margin:10px 0 14px; font-size:50px; line-height:1.08; letter-spacing:-.045em; }
+.service-detail-hero h1 .no-break { white-space:nowrap; }
 .service-detail-lead { max-width:720px; margin:0; color:#26364c; font-size:17px; font-weight:700; line-height:1.85; }
 .service-detail-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; }
 .service-detail-hero aside { align-self:stretch; padding:24px; border:1px solid #cfddf6; border-radius:22px; background:rgba(255,255,255,.76); }
@@ -3020,7 +3047,7 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .service-choice h3 { font-size:23px; }
   .service-hub-note { margin:20px 10px; padding:20px; }
   .service-detail-hero { grid-template-columns:1fr; padding:22px 17px; border-radius:22px; }
-  .service-detail-hero h1 { font-size:34px; overflow-wrap:normal; word-break:keep-all; }
+  .service-detail-hero h1 { font-size:30px; line-height:1.18; overflow-wrap:normal; word-break:auto-phrase; line-break:strict; }
   .service-detail-lead { font-size:15px; }
   .service-search-answer { grid-template-columns:1fr; padding:17px; }
   .service-search-answer header h2 { font-size:23px; }
