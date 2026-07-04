@@ -946,6 +946,7 @@ def render_category_intro(
     product_cards = render_category_product_shelf(page.slug, matches, offers, offer_assets, trend_rows)
     article_cards = render_category_articles(page, pages)
     profile = _category_profile(page.title)
+    expertise = _category_expertise(page.slug)
     playbook = "\n".join(
         "<li><b>%s</b><span>%s</span></li>" % (html.escape(title), html.escape(text))
         for title, text in profile["playbook"]
@@ -962,6 +963,7 @@ def render_category_intro(
 %s
 %s
 %s
+%s
 <section class="category-playbook">
   <div>
     <div class="section-kicker">選ぶ前の確認</div>
@@ -973,15 +975,52 @@ def render_category_intro(
 """ % (
         _kurara_image("duo", "%sカテゴリを案内するくららとミケル" % page.title),
         html.escape(profile["kicker"]),
-        _inline(page.title),
+        _inline(str(profile.get("heading", page.title))),
         html.escape(profile["lead"]).replace("\n", "<br>"),
         '<section class="category-comparison-grid">%s</section>' % cards if cards else "",
         product_cards,
         article_cards,
+        expertise,
         html.escape(profile["playbook_title"]),
         html.escape(profile["playbook_lead"]),
         playbook,
     )
+
+
+def _category_expertise(slug: str) -> str:
+    if slug != "category-housework-timesaving":
+        return ""
+    return """
+<section class="category-expertise" id="housework-guide">
+  <header>
+    <div class="section-kicker">時短家電の選び方 2026</div>
+    <h2>家事を時短するなら 毎日いちばん時間を取られる作業から減らす</h2>
+    <p>時短家電は、機能の多さよりも「週に何回使うか」「準備と後片付けまで含めて何分減るか」で選ぶと失敗しにくくなります。共働き、一人暮らし、子育て世帯では、同じ商品でも優先順位が変わります。</p>
+  </header>
+  <div class="housework-answer-grid">
+    <article><span>床掃除を減らす</span><h3>ロボット掃除機</h3><p>床に物を置かない習慣を作れる家庭向け。段差、家具下の高さ、水拭き後の手入れ、交換部品を確認します。</p><a href="housework-timesaving-items-comparison.html">掃除家電の候補を見る</a></article>
+    <article><span>調理中の拘束を減らす</span><h3>自動調理鍋・電子レンジ</h3><p>材料を入れた後に別の家事を進めたい人向け。容量、予約、洗う部品数、設置寸法を比べます。</p><a href="kitchen-appliances-comparison.html">キッチン家電を見る</a></article>
+    <article><span>洗濯後の手間を減らす</span><h3>衣類乾燥・スチーマー</h3><p>干す、取り込む、アイロンを減らしたい人向け。衣類の種類、運転音、電気代、使用後の手入れを確認します。</p><a href="living-appliances-comparison.html">暮らし家電を見る</a></article>
+    <article><span>献立決めを減らす</span><h3>冷凍宅配食・調理補助</h3><p>調理だけでなく献立と買い物の時間も減らしたい人向け。1食総額、送料、冷凍庫の空き、スキップ条件まで見ます。</p><a href="#category-products">掲載中の商品を見る</a></article>
+  </div>
+  <section class="housework-cost-check">
+    <div><small>失敗を減らす計算</small><h3>本体価格ではなく 1か月の手間と総額で比べる</h3></div>
+    <ol>
+      <li><b>01</b><span>今の家事にかかる回数と時間を1週間だけ記録</span></li>
+      <li><b>02</b><span>設置・準備・後片付けを含めて減らせる時間を確認</span></li>
+      <li><b>03</b><span>電気代、洗剤、フィルター、交換部品を含む年間費用で比較</span></li>
+    </ol>
+  </section>
+  <div class="housework-faq">
+    <h2>時短家電を選ぶ前によくある疑問</h2>
+    <details><summary>最初に買うなら何がおすすめ？</summary><p>毎週もっとも長く行っている家事から選びます。床掃除が頻繁ならロボット掃除機、調理中の拘束が長いなら自動調理鍋や電子レンジが候補です。</p></details>
+    <details><summary>一人暮らしでも時短家電は必要？</summary><p>家事量が少ない場合は大型・高機能である必要はありません。収納できるサイズ、手入れの少なさ、少量運転のしやすさを優先します。</p></details>
+    <details><summary>共働き家庭で優先する条件は？</summary><p>予約運転、外出中の自動運転、家族が迷わず使える操作性を優先します。運転音と終了後に放置できる時間も確認します。</p></details>
+    <details><summary>電気代が高くならない？</summary><p>消費電力だけでなく使用時間と頻度で変わります。商品ページの年間消費電力量や定格消費電力を確認し、消耗品を含む年間費用で判断します。</p></details>
+  </div>
+  <footer><small>更新方針</small><p>販売状況、価格帯、レビュー母数、用途との一致を定期確認し、掲載終了品や条件が変わった候補は入れ替えます。未使用商品を体験談として書かず、価格・在庫はリンク先の最新情報を優先します。</p></footer>
+</section>
+"""
 
 
 def render_category_articles(page: SitePage, pages: List[SitePage]) -> str:
@@ -1311,8 +1350,9 @@ def _category_profile(title: str) -> Dict[str, object]:
             "next_items": ["保存水", "簡易トイレ", "防災ライト", "ポータブル電源"],
         },
         "家事・時短": {
-            "kicker": "家事の時短",
-            "lead": "掃除、洗濯、料理、衣類ケア。毎日の手間を減らせる候補を整理します。",
+            "kicker": "掃除・料理・洗濯をラクにする",
+            "heading": "家事をラクにする時短家電",
+            "lead": "ロボット掃除機、キッチン家電、衣類ケア家電を生活場面別に比較。\n共働き・一人暮らし・子育て家庭ごとに、減らしたい家事から選べます。",
             "playbook_title": "時短前の3チェック",
             "playbook_lead": "高機能より、生活動線に合って続くかを見る。",
             "playbook": [
@@ -1910,7 +1950,10 @@ def render_layout(
     )
     main_body = body if slug == "index" else '<section class="page-card">%s</section>' % body
     body_class = "home" if slug == "index" else "subpage"
-    search_title = SERVICE_SEARCH_TITLES.get(slug, title)
+    category_search_titles = {
+        "category-housework-timesaving": "時短家電おすすめ比較 2026｜掃除・料理・洗濯をラクにする選び方",
+    }
+    search_title = SERVICE_SEARCH_TITLES.get(slug, category_search_titles.get(slug, title))
     document_title = "くらメモ" if slug == "index" else "%s | くらメモ" % search_title
     description = _meta_description(title, slug)
     page_name = "index.html" if slug == "index" else "%s.html" % slug
@@ -1973,6 +2016,8 @@ def render_layout(
 def _meta_description(title: str, slug: str) -> str:
     if slug == "index":
         return "SNSやニュースで注目される商品を用途・条件・価格で整理する注目商品チェックメディア"
+    if slug == "category-housework-timesaving":
+        return "時短家電を掃除・料理・洗濯・衣類ケア別に比較。ロボット掃除機やキッチン家電など、共働き・一人暮らし・子育て家庭に合う選び方を、手入れ・設置・電気代・レビューから整理します"
     if slug.startswith("category-"):
         return "%sの商品と選び方を用途・価格・レビュー・注意点から整理します" % title
     if slug.endswith("comparison"):
@@ -2008,6 +2053,25 @@ def _schema_json(title: str, description: str, canonical_url: str, slug: str) ->
         page["url"] = canonical_url
         page["mainEntityOfPage"] = canonical_url
     graph: List[Dict[str, object]] = [page]
+    if slug == "category-housework-timesaving":
+        graph.append({
+            "@type": "FAQPage",
+            "mainEntity": [
+                {"@type": "Question", "name": "最初に買う時短家電は何がおすすめ？", "acceptedAnswer": {"@type": "Answer", "text": "毎週もっとも時間を取られている家事から選びます。床掃除ならロボット掃除機、調理中の拘束が長いなら自動調理鍋や電子レンジが候補です。"}},
+                {"@type": "Question", "name": "一人暮らしでも時短家電は必要？", "acceptedAnswer": {"@type": "Answer", "text": "大型・高機能より、収納できるサイズ、手入れの少なさ、少量運転のしやすさを優先します。"}},
+                {"@type": "Question", "name": "共働き家庭で優先する条件は？", "acceptedAnswer": {"@type": "Answer", "text": "予約運転、外出中の自動運転、家族が迷わず使える操作性、運転音を優先します。"}},
+                {"@type": "Question", "name": "時短家電で電気代は高くならない？", "acceptedAnswer": {"@type": "Answer", "text": "消費電力だけでなく使用時間と頻度、消耗品を含む年間費用で比較します。"}},
+            ],
+        })
+        graph.append({
+            "@type": "ItemList",
+            "name": "家事をラクにする時短家電ガイド",
+            "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": "家事・時短家電", "url": "https://kuramemo-mk.com/housework-timesaving-items-comparison.html"},
+                {"@type": "ListItem", "position": 2, "name": "キッチン家電", "url": "https://kuramemo-mk.com/kitchen-appliances-comparison.html"},
+                {"@type": "ListItem", "position": 3, "name": "暮らし家電", "url": "https://kuramemo-mk.com/living-appliances-comparison.html"},
+            ],
+        })
     if slug in SERVICE_PAGE_META:
         meta = SERVICE_PAGE_META[slug]
         graph.append({
@@ -2662,6 +2726,34 @@ main { width:min(1120px, calc(100% - 24px)); margin:0 auto 44px; }
 .category-product-shelf h2 { display:block; margin:6px 0 8px; padding:0; border:0; font-size:clamp(30px, 4vw, 44px); line-height:1.05; letter-spacing:-.055em; }
 .category-product-shelf h2::before, .category-product-shelf h2::after { content:none; }
 .category-product-shelf > p { max-width:760px; margin:0 0 16px; color:#4b5563; font-weight:800; line-height:1.8; }
+.category-expertise { margin:28px 0; padding:28px; border:1px solid rgba(59,130,246,.18); border-radius:28px; background:linear-gradient(145deg,#fff,#f5f8ff); box-shadow:0 20px 56px rgba(37,99,235,.07); }
+.category-expertise > header { max-width:860px; }
+.category-expertise > header h2 { display:block; margin:8px 0 12px; padding:0; border:0; font-size:clamp(30px,3.8vw,44px); line-height:1.18; letter-spacing:-.045em; text-wrap:balance; }
+.category-expertise > header h2::before,.category-expertise > header h2::after { content:none; }
+.category-expertise > header p { color:#3f4d63; font-size:16px; font-weight:750; line-height:1.9; }
+.housework-answer-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:22px 0; }
+.housework-answer-grid article { padding:19px; border:1px solid #dbe6f8; border-radius:20px; background:#fff; }
+.housework-answer-grid span { color:#2563eb; font-size:11px; font-weight:900; letter-spacing:.08em; }
+.housework-answer-grid h3 { margin:5px 0 7px; font-size:23px; line-height:1.35; }
+.housework-answer-grid p { margin:0 0 10px; color:#45536a; font-size:14px; line-height:1.75; }
+.housework-answer-grid a { color:#175dbd; font-size:13px; font-weight:900; }
+.housework-cost-check { display:grid; grid-template-columns:minmax(230px,.8fr) minmax(0,1.7fr); gap:20px; margin:22px 0; padding:22px; border-radius:22px; background:#101b33; color:#fff; }
+.housework-cost-check small { color:#8db5ff; font-weight:900; letter-spacing:.1em; }
+.housework-cost-check h3 { margin:6px 0 0; color:#fff; font-size:25px; line-height:1.4; }
+.housework-cost-check ol { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:0; padding:0; list-style:none; }
+.housework-cost-check li { padding:14px; border:1px solid rgba(255,255,255,.16); border-radius:16px; }
+.housework-cost-check li b,.housework-cost-check li span { display:block; }
+.housework-cost-check li b { color:#8db5ff; font-size:12px; }
+.housework-cost-check li span { margin-top:5px; font-size:13px; font-weight:750; line-height:1.65; }
+.housework-faq { margin-top:24px; }
+.housework-faq h2 { display:block; margin:0 0 12px; padding:0; border:0; font-size:30px; }
+.housework-faq h2::before,.housework-faq h2::after { content:none; }
+.housework-faq details { margin:8px 0; padding:14px 16px; border:1px solid #dbe6f8; border-radius:16px; background:#fff; }
+.housework-faq summary { cursor:pointer; font-weight:900; }
+.housework-faq p { margin:9px 0 0; color:#45536a; font-size:14px; line-height:1.8; }
+.category-expertise > footer { margin-top:22px; padding:16px 18px; border-left:4px solid #2875ef; background:#f1f6ff; }
+.category-expertise > footer small { color:#2563eb; font-weight:900; }
+.category-expertise > footer p { margin:4px 0 0; color:#45536a; font-size:13px; line-height:1.75; }
 .category-product-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; }
 .category-product-card { display:grid; grid-template-columns:148px minmax(0, 1fr); gap:16px; align-items:start; min-height:270px; padding:16px; border:1px solid rgba(59,130,246,.14); border-radius:22px; background:#fff; box-shadow:0 12px 34px rgba(17,24,39,.05); }
 .category-product-image { display:block; text-decoration:none; }
@@ -3141,6 +3233,14 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .category-comparison-card h2 { margin:9px 0 8px; font-size:23px; line-height:1.16; }
   .category-product-shelf { margin:18px 0; padding:14px; border-radius:22px; }
   .category-product-shelf h2 { font-size:27px; }
+  .category-expertise { margin:18px 0; padding:16px; border-radius:22px; }
+  .category-expertise > header h2 { font-size:28px; line-height:1.3; }
+  .category-expertise > header p { font-size:14px; line-height:1.8; }
+  .housework-answer-grid { grid-template-columns:1fr; }
+  .housework-cost-check { grid-template-columns:1fr; padding:17px; }
+  .housework-cost-check h3 { font-size:22px; }
+  .housework-cost-check ol { grid-template-columns:1fr; }
+  .housework-faq h2 { font-size:25px; line-height:1.35; }
   .category-product-card { grid-template-columns:1fr; min-height:0; padding:14px; }
   .category-product-image .offer-visual { height:154px; }
   .category-product-card h3 { font-size:17px; line-height:1.3; }
