@@ -84,6 +84,7 @@ class StaticSiteTest(unittest.TestCase):
             settings = replace(base, database_path=root / "site.db", output_dir=root / "output")
             result = build_static_site(settings)
             self.assertGreaterEqual(result["pages"], 6)
+            self.assertGreaterEqual(result["service_on_page_min_score"], 90)
             index = root / "output" / "site" / "index.html"
             heat = root / "output" / "site" / "heat-relief-items-comparison.html"
             article = root / "output" / "site" / "charger-selection.html"
@@ -132,7 +133,8 @@ class StaticSiteTest(unittest.TestCase):
             self.assertNotIn("提携先を調査中", investment_html)
             self.assertIn("2026年7月 公式情報で確認できた差", investment_html)
             self.assertIn("service-provider-heading", investment_html)
-            self.assertIn("ネット証券比較 2026｜NISA・手数料・ポイントで選ぶ", investment_html)
+            self.assertIn("ネット証券おすすめ比較 2026｜NISA・手数料で選ぶ", investment_html)
+            self.assertIn("今は契約しない方がよい人", investment_html)
             self.assertIn("category-services.html", index_html)
             self.assertFalse((root / "output" / "site" / "category-beauty-fitness.html").exists())
             self.assertNotIn("公開中のガイド", beauty.read_text(encoding="utf-8"))

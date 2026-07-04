@@ -140,14 +140,57 @@ SERVICE_EXPERTISE = {
 }
 
 SERVICE_SEARCH_TITLES = {
-    "internet-line-services": "光回線比較 2026｜戸建て・マンションの総額と選び方",
-    "mobile-carrier-services": "スマホ回線・格安SIM比較 2026｜容量別の選び方",
-    "ai-school-services": "AIスクール比較 2026｜料金・学習内容・支援を確認",
-    "hair-removal-services": "脱毛サービス比較 2026｜医療・サロン・家庭用の違い",
-    "credit-card-services": "クレジットカード比較 2026｜還元・年会費・利用先で選ぶ",
-    "investment-account-services": "ネット証券比較 2026｜NISA・手数料・ポイントで選ぶ",
-    "streaming-services": "動画配信サービス比較 2026｜料金・作品・同時視聴で選ぶ",
-    "fortune-consultation-services": "電話占い・相談サービス比較 2026｜料金と利用上限を確認",
+    "internet-line-services": "光回線おすすめ比較 2026｜戸建て・マンションの総額で選ぶ",
+    "mobile-carrier-services": "格安SIM・スマホ回線おすすめ比較 2026｜容量別に選ぶ",
+    "ai-school-services": "AIスクールおすすめ比較 2026｜料金・学習内容・支援で選ぶ",
+    "hair-removal-services": "医療脱毛・美容脱毛おすすめ比較 2026｜方式と総額で選ぶ",
+    "credit-card-services": "クレジットカードおすすめ比較 2026｜還元・年会費で選ぶ",
+    "investment-account-services": "ネット証券おすすめ比較 2026｜NISA・手数料で選ぶ",
+    "streaming-services": "動画配信サービスおすすめ比較 2026｜料金・作品で選ぶ",
+    "fortune-consultation-services": "電話占い・相談サービスおすすめ比較 2026｜料金上限で選ぶ",
+}
+
+SERVICE_DECISION_GUIDES = {
+    "internet-line-services": {
+        "outcome": "住所と建物に合う回線を選べれば、開通後に速度条件や請求額を見て慌てる可能性を減らせます。",
+        "avoid": "引っ越し予定が近い、工事できない、短期利用だけならホームルーターやレンタル回線も比較。",
+        "commitment": "36か月総額・工事残債・解約費用を確認してから申込み",
+    },
+    "mobile-carrier-services": {
+        "outcome": "生活圏の電波と実際のデータ量に合えば、毎月余る容量や追加購入を減らしやすくなります。",
+        "avoid": "店舗で常に相談したい、端末設定が不安、生活圏の対応状況を確認できない場合は急いで変更しない。",
+        "commitment": "直近3か月の使用量・対応端末・通話条件を確認",
+    },
+    "ai-school-services": {
+        "outcome": "作りたい成果物を先に決めれば、講座を眺めるだけで終わらず仕事で使える形まで進めやすくなります。",
+        "avoid": "学ぶ時間を確保できない、無料教材で目的を達成できる、成果物が決まっていない段階では契約を急がない。",
+        "commitment": "受講後の成果物・質問回数・総額・中途解約を確認",
+    },
+    "hair-removal-services": {
+        "outcome": "希望部位と通院計画が合えば、自己処理に使う時間や肌への負担を減らす生活を目指せます。",
+        "avoid": "肌状態に不安がある、転居予定がある、総額を確認できない場合はカウンセリング後も契約を保留。",
+        "commitment": "方式・回数・追加費用・予約変更・途中解約を確認",
+    },
+    "credit-card-services": {
+        "outcome": "普段の支払先に合う一枚へまとめれば、条件達成のための不要な買い物を増やさずポイントを使いやすくできます。",
+        "avoid": "支出管理が難しい、リボ設定を理解していない、年会費を回収できない場合は発行枚数を増やさない。",
+        "commitment": "基本還元・対象外取引・年会費・リボ設定を確認",
+    },
+    "investment-account-services": {
+        "outcome": "買いたい商品と積立方法に合う口座なら、毎月の入金や注文を迷わず継続しやすくなります。",
+        "avoid": "生活防衛資金がない、元本割れを許容できない、投資目的が決まっていない場合は口座開設後も取引を急がない。",
+        "commitment": "NISA対象商品・信託報酬・為替コスト・サポートを確認",
+    },
+    "streaming-services": {
+        "outcome": "見たい作品と視聴人数に合えば、使わないサブスクを重ねず家族の視聴時間をまとめやすくなります。",
+        "avoid": "見たい作品が配信されていない、無料期間だけが理由、既存契約で足りる場合は追加契約しない。",
+        "commitment": "作品検索・追加課金・同時視聴・解約日を確認",
+    },
+    "fortune-consultation-services": {
+        "outcome": "質問と時間上限を決めれば、悩みを言葉にして次に取る行動を整理する時間として使えます。",
+        "avoid": "支出や利用時間を止めにくい、医療・法律・投資の専門判断が必要な場合は利用しない。",
+        "commitment": "1分料金・通話料・初回上限・後払い・退会方法を確認",
+    },
 }
 
 
@@ -187,6 +230,7 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
     _copy_static_assets(target)
 
     rendered = []
+    service_quality: Dict[str, Dict[str, object]] = {}
     for page in pages:
         page_markdown = page.markdown
         rows = product_map.get(page.slug, [])
@@ -245,6 +289,8 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
         )
         out = target / ("%s.html" % page.slug if page.slug != "index" else "index.html")
         out.write_text(html_doc, encoding="utf-8")
+        if page.slug in SERVICE_PAGE_META:
+            service_quality[page.slug] = _service_on_page_score(html_doc)
         rendered.append(str(out))
 
     not_found_body = """
@@ -273,12 +319,34 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
         sitemap = _write_sitemap(target, settings.site_base_url, rendered)
         rendered.append(str(sitemap))
 
+    quality_path = target / "service-quality-report.json"
+    quality_path.write_text(json.dumps(service_quality, ensure_ascii=False, indent=2), encoding="utf-8")
+
     return {
         "output_dir": str(target),
         "pages": len(rendered),
         "files": rendered,
         "active_affiliate_offers": sum(1 for offer in offers.values() if offer.status == "active" and offer.affiliate_url),
+        "service_quality_report": str(quality_path),
+        "service_on_page_min_score": min((int(row["score"]) for row in service_quality.values()), default=0),
     }
+
+
+def _service_on_page_score(html_doc: str) -> Dict[str, object]:
+    """Deterministic on-page readiness gate; this is not a ranking guarantee."""
+    checks = {
+        "検索タイトル": 10 if "おすすめ比較 2026" in html_doc else 0,
+        "検索説明": 10 if re.search(r'<meta name="description" content=".{70,}">', html_doc) else 0,
+        "比較候補": 15 if html_doc.count("service-provider-heading") >= 6 else 0,
+        "公式導線": 15 if html_doc.count("公式条件を見る") >= 6 else 0,
+        "比較基準": 10 if "このページの比較基準" in html_doc else 0,
+        "契約判断": 10 if "今は契約しない方がよい人" in html_doc else 0,
+        "用語解説": 10 if html_doc.count("service-glossary") >= 1 else 0,
+        "FAQ": 10 if html_doc.count("<details>") >= 3 else 0,
+        "更新根拠": 5 if "DATA POLICY" in html_doc else 0,
+        "構造化データ": 5 if '"FAQPage"' in html_doc else 0,
+    }
+    return {"score": sum(checks.values()), "checks": checks, "note": "検索順位・ドメイン評価・実体験は別評価"}
 
 
 def render_related_guides(
@@ -658,6 +726,21 @@ def _service_evidence_note(slug: str) -> str:
     ) % date.today().isoformat().replace("-", ".")
 
 
+def _service_decision_guide(slug: str) -> str:
+    guide = SERVICE_DECISION_GUIDES.get(slug)
+    if not guide:
+        return ""
+    return (
+        '<section class="service-decision-guide">'
+        '<article class="decision-positive"><small>契約後に目指せる状態</small><p>%s</p></article>'
+        '<article class="decision-negative"><small>今は契約しない方がよい人</small><p>%s</p></article>'
+        '<article class="decision-gate"><small>申込み前の最終条件</small><strong>%s</strong></article>'
+        '</section>'
+    ) % (
+        html.escape(guide["outcome"]), html.escape(guide["avoid"]), html.escape(guide["commitment"]),
+    )
+
+
 def render_service_detail(page: SitePage, article_body: str) -> str:
     meta = SERVICE_PAGE_META[page.slug]
     article_body = _service_provider_ctas(_public_service_copy(article_body))
@@ -700,6 +783,7 @@ def render_service_detail(page: SitePage, article_body: str) -> str:
   </header>
   %s
   <section class="service-decision-flow"><header><small>3 STEP</small><h2>契約前に先に決めること</h2></header><ol>%s</ol></section>
+  %s
   <div class="service-check-strip">%s</div>
   <nav class="service-toc" aria-label="このページの目次"><b>このページで分かること</b>%s</nav>
   <div class="service-detail-content">%s</div>
@@ -713,7 +797,8 @@ def render_service_detail(page: SitePage, article_body: str) -> str:
 """ % (
         html.escape(meta["label"]), html.escape(page.title), html.escape(meta["lead"]),
         html.escape(_heading_id(comparison_heading), quote=True), html.escape(_heading_id(detail_heading), quote=True),
-        date.today().isoformat().replace("-", "."), _render_service_expertise(page.slug), questions, checks, toc, article_body,
+        date.today().isoformat().replace("-", "."), _render_service_expertise(page.slug), questions,
+        _service_decision_guide(page.slug), checks, toc, article_body,
         _service_evidence_note(page.slug), faq_items,
     )
 
@@ -2783,6 +2868,17 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
 .service-decision-flow li b,.service-decision-flow li span { display:block; }
 .service-decision-flow li b { color:#8db5ff; font-size:12px; }
 .service-decision-flow li span { margin-top:6px; font-size:13px; font-weight:700; line-height:1.55; }
+.service-decision-guide { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:0 0 16px; }
+.service-decision-guide article { min-width:0; padding:18px; border:1px solid #dce4f1; border-radius:17px; background:#fff; }
+.service-decision-guide small { display:block; margin-bottom:7px; font-size:11px; font-weight:900; letter-spacing:.08em; }
+.service-decision-guide p { margin:0; font-size:13px; font-weight:700; line-height:1.7; }
+.service-decision-guide strong { display:block; font-size:14px; line-height:1.65; }
+.decision-positive { border-top:4px solid #16a34a !important; }
+.decision-positive small { color:#15803d; }
+.decision-negative { border-top:4px solid #dc2626 !important; }
+.decision-negative small { color:#b91c1c; }
+.decision-gate { border-top:4px solid #2875ef !important; background:#f5f8ff !important; }
+.decision-gate small { color:#185ec9; }
 .service-check-strip { display:grid; grid-template-columns:repeat(4,1fr); margin-bottom:18px; border:1px solid #d9e4f6; border-radius:18px; overflow:hidden; }
 .service-check-strip span { padding:13px; border-right:1px solid #d9e4f6; background:#f7faff; text-align:center; font-size:13px; font-weight:800; }
 .service-check-strip span:last-child { border-right:0; }
@@ -2871,6 +2967,7 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .service-glossary > small,.service-glossary > h2 { grid-column:1; }
   .service-decision-flow { grid-template-columns:1fr; padding:18px; }
   .service-decision-flow ol { grid-template-columns:1fr; }
+  .service-decision-guide { grid-template-columns:1fr; }
   .service-check-strip { grid-template-columns:1fr 1fr; }
   .service-check-strip span:nth-child(2) { border-right:0; }
   .service-check-strip span:nth-child(-n+2) { border-bottom:1px solid #d9e4f6; }
