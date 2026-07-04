@@ -357,6 +357,7 @@ def _kurara_image(kind: str, title: str = "") -> str:
         "caution": "kurara-caution-v3.png",
         "puzzled": "kurara-puzzled-v5.png",
         "smile": "kurara-x-icon-v4.png",
+        "duo": "kurara-mikeru-duo-icon-v1.png",
     }
     filename = files.get(kind, files["compare"])
     label = title or {
@@ -366,13 +367,22 @@ def _kurara_image(kind: str, title: str = "") -> str:
         "caution": "注意点を伝えるくらら",
         "puzzled": "比較候補を見比べるくらら",
         "smile": "笑顔で案内するくらら",
+        "duo": "くららとミケル",
     }.get(kind, "商品を解説するくらら")
     return '<img src="assets/brand/%s" alt="%s" loading="lazy">' % (
         html.escape(filename, quote=True), html.escape(label, quote=True),
     )
 
 
-def _narrated_explanation(content: str, kind: str = "compare") -> str:
+def _mikeru_image(kind: str = "check", title: str = "") -> str:
+    filename = "mikeru-recommend-v1.png" if kind == "recommend" else "mikeru-check-v1.png"
+    label = title or ("候補を案内するミケル" if kind == "recommend" else "条件を確認するミケル")
+    return '<img src="assets/brand/%s" alt="%s" loading="lazy">' % (
+        filename, html.escape(label, quote=True),
+    )
+
+
+def _narrated_explanation(content: str, kind: str = "compare", speaker: str = "kurara") -> str:
     # A speech bubble should sound like Kurara, not like detached editorial copy.
     # Provider explanations are a single paragraph; richer offer-card markup is
     # left structurally intact.
@@ -391,12 +401,16 @@ def _narrated_explanation(content: str, kind: str = "compare") -> str:
         )
         for formal, spoken in replacements:
             voice = voice.replace(formal, spoken)
-        opener = "うーん、ここは迷いやすいね。" if kind == "puzzled" else "ここは私と一緒に見てみよう。"
+        if speaker == "mikeru":
+            opener = "ここはミケルが確認するね。"
+        else:
+            opener = "うーん、ここは迷いやすいね。" if kind == "puzzled" else "ここは私と一緒に見てみよう。"
         content = voice.replace("<p>", "<p>%s" % opener, 1)
+    portrait = _mikeru_image("recommend" if kind == "recommend" else "check") if speaker == "mikeru" else _kurara_image(kind)
     return (
-        '<div class="narrated-explanation narrated-%s">'
+        '<div class="narrated-explanation narrated-%s narrator-%s">'
         '<div class="narrator-portrait">%s</div><div class="narrator-bubble">%s</div></div>'
-    ) % (html.escape(kind, quote=True), _kurara_image(kind), content)
+    ) % (html.escape(kind, quote=True), html.escape(speaker, quote=True), portrait, content)
 
 
 def _service_display_title(title: str) -> str:
@@ -779,18 +793,21 @@ def _service_provider_ctas(article_body: str) -> str:
         ) % (match.group(0), html.escape(href, quote=True))
 
     article_body = re.sub(r'(<h3 id="[^"]+">)(.*?)(</h3>)', add_cta, article_body)
-    # Keep the character editorial rather than repetitive: she appears at key
-    # comparison turns, while the other provider notes stay as normal copy.
+    # Every provider explanation is a speech bubble. Kurara and Mikeru alternate
+    # so the page stays coherent without repeating one portrait down the page.
     provider_index = 0
 
     def narrate_selected(match: re.Match[str]) -> str:
         nonlocal provider_index
         provider_index += 1
+        speaker = "kurara" if provider_index % 2 else "mikeru"
         if provider_index == 1:
-            return match.group(1) + _narrated_explanation(match.group(2), "puzzled")
-        if provider_index in {4, 7}:
-            return match.group(1) + _narrated_explanation(match.group(2), "recommend")
-        return match.group(1) + '<div class="service-provider-copy">%s</div>' % match.group(2)
+            kind = "puzzled"
+        elif provider_index % 4 == 0:
+            kind = "recommend"
+        else:
+            kind = "compare"
+        return match.group(1) + _narrated_explanation(match.group(2), kind, speaker)
 
     return re.sub(
         r'(<div class="service-provider-heading">.*?</div>)\s*(<p>.*?</p>)',
@@ -879,7 +896,7 @@ def render_service_detail(page: SitePage, article_body: str) -> str:
   </aside>
 </article>
 """ % (
-        _kurara_image("smile", "この比較ページを案内するくらら"),
+        _kurara_image("duo", "くららとミケルが案内する比較ページ"),
         html.escape(meta["label"]), _service_display_title(page.title), html.escape(meta["lead"]),
         html.escape(_heading_id(comparison_heading), quote=True), html.escape(_heading_id(detail_heading), quote=True),
         date.today().isoformat().replace("-", "."), _render_service_expertise(page.slug), questions,
@@ -954,7 +971,7 @@ def render_category_intro(
   <ul>%s</ul>
 </section>
 """ % (
-        _kurara_image("smile", "%sカテゴリを案内するくらら" % page.title),
+        _kurara_image("duo", "%sカテゴリを案内するくららとミケル" % page.title),
         html.escape(profile["kicker"]),
         _inline(page.title),
         html.escape(profile["lead"]).replace("\n", "<br>"),
@@ -1367,7 +1384,7 @@ def render_comparison_intro(
   </aside>
 </section>
 """ % (
-        _kurara_image("puzzled", "商品候補を比較するくらら"),
+        _kurara_image("duo", "商品候補を比較するくららとミケル"),
         html.escape(category),
         _inline(title_main),
         '<p class="comparison-title-sub">%s</p>' % _inline(title_sub) if title_sub else "",
@@ -1554,7 +1571,11 @@ def _offer_card(
         evidence = _offer_listing_reason(row, asset or {}, trend)
         note_text = row.get("notes", "")
         evidence_kind = "trend" if trend or any(term in note_text for term in ("SNS", "韓国", "アメリカ", "話題")) else "recommend"
-        evidence = _narrated_explanation(evidence, evidence_kind)
+        evidence = _narrated_explanation(
+            evidence,
+            evidence_kind,
+            "kurara" if evidence_kind == "trend" else "mikeru",
+        )
         return """
 <article class="offer-card offer-card-active">
   <p class="offer-rank">No.%02d</p>
@@ -2464,7 +2485,7 @@ def _home_landing(offer_assets: Dict[str, Dict[str, str]], trend_rows: List[Dict
   </div>
 </section>
 """ % (
-        _kurara_image("smile", "くらメモを案内するくらら"), topic_summary,
+        _kurara_image("duo", "くらメモを案内するくららとミケル"), topic_summary,
         featured_slug,
         featured_trend,
         featured_notes, trend_cards,
@@ -2502,6 +2523,10 @@ a { color: var(--accent); }
 .narrated-explanation { display:grid; grid-template-columns:74px minmax(0,1fr); align-items:end; gap:11px; margin:12px 0 18px; }
 .narrator-portrait { width:74px; height:88px; overflow:hidden; border:2px solid #d4e1f8; border-radius:18px 18px 6px 18px; background:#eef4ff; }
 .narrator-portrait img { display:block; width:100%; height:100%; object-fit:cover; object-position:center 22%; }
+.narrator-mikeru .narrator-portrait { border-color:#d9c99f; background:#fff9e9; }
+.narrator-mikeru .narrator-portrait img { object-position:center 38%; }
+.narrator-mikeru .narrator-bubble { border-color:#eadfbd; background:#fffdf5; }
+.narrator-mikeru .narrator-bubble::before { border-color:#eadfbd; background:#fffdf5; }
 .narrator-bubble { position:relative; min-width:0; padding:13px 15px; border:1px solid #dce6f8; border-radius:18px 18px 18px 5px; background:#fff; color:#26364c; box-shadow:0 9px 24px rgba(31,63,111,.07); }
 .narrator-bubble::before { content:""; position:absolute; left:-8px; bottom:17px; width:14px; height:14px; border-left:1px solid #dce6f8; border-bottom:1px solid #dce6f8; background:#fff; transform:rotate(45deg); }
 .narrator-bubble > p { margin:0; }
