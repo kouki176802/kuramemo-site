@@ -1845,7 +1845,7 @@ def render_layout(
   </main>
   <footer>
     <p>© くらメモ / 注目商品チェック</p>
-    <p><a href="privacy-policy.html">プライバシーポリシー</a>・<a href="disclaimer.html">免責事項</a>・<a href="editorial-policy.html">編集方針</a></p>
+    <p><a href="about.html">運営者プロフィール</a>・<a href="privacy-policy.html">プライバシーポリシー</a>・<a href="disclaimer.html">免責事項</a>・<a href="editorial-policy.html">編集方針</a></p>
   </footer>
 </body>
 </html>
@@ -1878,8 +1878,17 @@ def _schema_json(title: str, description: str, canonical_url: str, slug: str) ->
         "description": description,
         "inLanguage": "ja-JP",
         "dateModified": date.today().isoformat(),
-        "author": {"@type": "Organization", "name": "くらメモ"},
-        "publisher": {"@type": "Organization", "name": "くらメモ"},
+        "author": {
+            "@type": "Person",
+            "name": "松本 浩揮",
+            "url": "https://kuramemo-mk.com/about.html",
+            "jobTitle": "くらメモ運営責任者",
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "くらメモ",
+            "url": "https://kuramemo-mk.com/",
+        },
     }
     if canonical_url:
         page["url"] = canonical_url
