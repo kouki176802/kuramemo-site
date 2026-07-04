@@ -12,7 +12,7 @@ def information_gap_hooks(market_label: str, topic: str, reason: str) -> List[Di
     """Create honest hook variants whose answer is present in the post body."""
     market = market_label.strip("【】") or "いま注目"
     subject = topic.strip().rstrip("。！？")
-    subject = subject if len(subject) <= 19 else subject[:18].rstrip() + "…"
+    subject = subject if len(subject) <= 57 else subject[:56].rstrip() + "…"
     if market.startswith("日本"):
         place = "日本で注目"
     elif "で" in market:

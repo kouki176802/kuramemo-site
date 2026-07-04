@@ -648,11 +648,11 @@ def _x_post(item: TrendOpportunity, hook: str = "") -> str:
             )
     else:
         lead = "【日本で売れ筋】楽天リアルタイムランキングを確認。"
-    product = _shorten(item.product.name, 12)
-    product_status = "楽天%s位" % item.product.rank if item.product.rank else "レビュー確認済み"
+    product = _shorten(item.product.name, 72)
+    product_status = "楽天リアルタイムランキング%s位" % item.product.rank if item.product.rank else "日本で販売中・レビュー確認済み"
     note = " 人物の愛用品を示すものではありません。" if item.person_note else ""
     answer = re.sub(r"^【[^】]+】", "", item.why_trending).strip()
-    answer = _shorten(answer, 38)
+    answer = _shorten(answer, 180)
     source_detail = ""
     if item.observation:
         source_name = item.observation.news_source or item.observation.source_name
@@ -660,8 +660,21 @@ def _x_post(item: TrendOpportunity, hook: str = "") -> str:
         source_detail = "\n根拠：%s%s" % (
             _shorten(source_name, 14), "・検索%s" % traffic if traffic else "",
         )
-    return "%s\nなぜ注目？ %s%s\n掲載中の関連候補：%s「%s」%s\n※話題の商品と同一とは限りません。" % (
-        hook or lead, answer, source_detail, product_status, product, note,
+    future = (
+        "「%s」が必要なとき、探し直す時間を減らし、必要な条件を満たす候補へ早く絞れます。"
+        % item.rule.context.rstrip("。")
+    )
+    return (
+        "%s\n\n"
+        "■どこで、なぜ話題？\n%s%s\n\n"
+        "■こんな時に使える\n%s\n\n"
+        "■選んだ後に目指せること\n%s\n\n"
+        "■日本で確認できる関連候補\n%s\n%s\n\n"
+        "■選ぶ前の注意\n価格・仕様・レビュー・返品条件は販売ページで再確認してください。%s\n"
+        "※ニュース掲載品と同一商品とは限りません。"
+    ) % (
+        hook or lead, answer, source_detail, item.rule.context, future,
+        product_status, product, note,
     )
 
 

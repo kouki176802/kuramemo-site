@@ -103,3 +103,27 @@ def render_a8_banner_block(slug: str) -> str:
     if not cards:
         return ""
     return '<aside class="a8-banner-section" aria-label="関連サービスの広告"><p class="a8-ad-label">PR・広告</p><h2>関連サービスの内容と条件</h2><p class="a8-banner-intro">バナーだけで判断せず、用途と申込み前の確認点を読んでから広告主ページへ進んでください。</p><div class="a8-banner-grid">%s</div><p class="a8-ad-note">料金・特典・提供条件は変更される場合があります。広告リンク先の最新情報を優先してください。</p></aside>' % cards
+
+
+def render_a8_inline_break(slug: str) -> str:
+    """Render one compact, contextual ad card as a visual reading break."""
+    keys = banner_keys_for_slug(slug)
+    if not keys:
+        return ""
+    key = keys[0]
+    banner = A8_BANNERS.get(key)
+    if not banner:
+        return ""
+    detail = A8_BANNER_DETAILS.get(key, {})
+    return (
+        '<aside class="a8-inline-break" aria-label="関連商品の広告">'
+        '<div class="a8-inline-label"><span>PR</span><small>記事に関連する選択肢</small></div>'
+        '<div class="a8-inline-media">%s</div>'
+        '<div class="a8-inline-copy"><h3>%s</h3><p>%s</p>'
+        '<small>申込み前に %s を確認</small></div></aside>'
+    ) % (
+        banner,
+        html.escape(detail.get("title", "関連サービス")),
+        html.escape(detail.get("description", "内容と条件を広告主ページで確認してください。")),
+        html.escape(detail.get("check", "料金・対象条件・解約方法")),
+    )

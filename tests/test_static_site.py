@@ -121,6 +121,11 @@ class StaticSiteTest(unittest.TestCase):
             self.assertIn("工事費", internet_line.read_text(encoding="utf-8"))
             self.assertIn("同時視聴", streaming.read_text(encoding="utf-8"))
             self.assertIn("リボ払い", credit_card.read_text(encoding="utf-8"))
+            for service_page in (mobile_services, investment_services, hair_removal, internet_line, streaming, credit_card):
+                service_html = service_page.read_text(encoding="utf-8")
+                self.assertIn("SEARCH INTENT", service_html, service_page.name)
+                self.assertIn("このページの比較基準", service_html, service_page.name)
+                self.assertIn("比較前に知っておきたい用語", service_html, service_page.name)
             self.assertIn("楽天モバイル公式", mobile_services.read_text(encoding="utf-8"))
             self.assertIn("アフィリエイト状況", investment_services.read_text(encoding="utf-8"))
             self.assertIn("category-services.html", index_html)
@@ -133,6 +138,7 @@ class StaticSiteTest(unittest.TestCase):
             self.assertNotIn("クリック分析", index.read_text(encoding="utf-8"))
             html = heat.read_text(encoding="utf-8")
             self.assertIn("用途別に確認する商品", html)
+            self.assertIn("a8-inline-break", html)
             self.assertTrue("商品リンク準備中" in html or "楽天で詳細を確認する" in html)
             if "楽天で詳細を確認する" in html:
                 self.assertIn("この商品を載せる理由", html)

@@ -18,7 +18,10 @@ from .settings import Settings
 from .utils import normalize_text, now_iso, stable_hash
 
 
-PLATFORM_LIMITS = {"x": 280, "threads": 500, "instagram": 2200}
+# X Premium can publish long-form posts.  Keep a safety ceiling rather than
+# forcing every draft into the legacy 280-character format.  The publisher
+# remains responsible for checking the connected account capability.
+PLATFORM_LIMITS = {"x": 25000, "threads": 10000, "instagram": 2200}
 PLATFORM_INTERVALS = {"x": 30, "threads": 45, "instagram": 180}
 URL_WEIGHT = 23
 URL_PATTERN = re.compile(r"https?://\S+")
@@ -152,7 +155,7 @@ def _fit_text(text: str, platform: str, target_url: str) -> str:
     if platform in {"x", "threads"} and target_url:
         suffix += "\n%s" % target_url
     limit = PLATFORM_LIMITS[platform]
-    if platform == "instagram":
+    if platform in {"x", "threads", "instagram"}:
         clean = re.sub(r"[^\S\n]+", " ", text)
         clean = re.sub(r"\n{3,}", "\n\n", clean).strip()
     else:

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List
 
 from .catalog import import_offers, list_offers
-from .a8_banners import render_a8_banner_block
+from .a8_banners import render_a8_banner_block, render_a8_inline_break
 from .database import initialize
 from .models import Offer
 from .settings import ROOT, Settings
@@ -88,6 +88,58 @@ SERVICE_PAGE_META = {
 }
 
 
+SERVICE_EXPERTISE = {
+    "internet-line-services": {
+        "intent": "光回線を料金だけで選ばず 自宅で使える回線から総額と速度条件を絞る",
+        "answers": [("戸建て", "提供住所と工事費を確認して3年総額で比較"), ("マンション", "建物の配線方式と導入済み回線を先に確認"), ("乗り換え", "違約金より工事残債と撤去費を確認")],
+        "method": ["建物単位の提供可否", "割引終了後を含む36か月総額", "IPv6と配線方式", "解約金・工事残債・撤去費"],
+        "terms": [("光コラボ", "NTTの光回線を事業者が自社サービスとして提供する仕組み"), ("実質無料", "分割請求と同額割引など 条件を満たした期間だけ相殺される方式"), ("IPv6 IPoE", "混雑しやすい経路を避けやすい接続方式 速度保証ではない")],
+    },
+    "mobile-carrier-services": {
+        "intent": "格安SIMとスマホ回線をデータ量 通信品質 店舗対応から選ぶ",
+        "answers": [("3GB前後", "小容量料金と繰り越しの有無を比較"), ("20〜30GB", "通話込み総額と超過後速度を比較"), ("大容量", "使い放題の対象外通信と混雑時条件を確認")],
+        "method": ["通常月のデータ使用量", "昼・夕方の通信品質", "通話と留守番電話", "店舗・eSIM・海外利用"],
+        "terms": [("MVNO", "大手通信会社から回線を借りて提供する通信事業者"), ("オンライン専用", "申込みや変更を原則Webやアプリで行う料金ブランド"), ("対応バンド", "端末が受信できる周波数帯 回線との相性確認が必要")],
+    },
+    "ai-school-services": {
+        "intent": "AIスクールを料金ではなく 作れる成果物と質問支援から選ぶ",
+        "answers": [("生成AI活用", "職種別課題と添削範囲を確認"), ("Python・機械学習", "前提知識とコードレビュー回数を確認"), ("副業・転職", "案件保証ではなく支援対象と期限を確認")],
+        "method": ["受講後に作れる成果物", "質問・添削の回数と期限", "講師の担当範囲", "総額・返金・中途解約"],
+        "terms": [("メンタリング", "学習計画や課題を個別に相談する支援"), ("ポートフォリオ", "習得内容を示す制作物や実装例"), ("リスキリング", "仕事で必要な新しい技能を学び直すこと")],
+    },
+    "hair-removal-services": {
+        "intent": "医療脱毛 サロン 家庭用脱毛器を方式 総額 通いやすさで比べる",
+        "answers": [("効果を重視", "医療行為の範囲と機器 麻酔 追加照射を確認"), ("痛みや通いやすさ", "方式 予約変更 店舗間移動を比較"), ("自宅で続ける", "照射可能部位 出力調整 保証を確認")],
+        "method": ["医療・美容・家庭用の違い", "希望部位と必要回数", "麻酔・剃毛を含む総額", "予約変更・解約・返金"],
+        "terms": [("医療脱毛", "医療機関で行う脱毛施術 リスク説明と診察を伴う"), ("美容脱毛", "サロン等で行う光を用いた美容サービス"), ("都度払い", "施術ごとに支払う方式 1回単価と必要回数を確認")],
+    },
+    "credit-card-services": {
+        "intent": "クレジットカードを最大還元率ではなく 普段の支払先と年会費で選ぶ",
+        "answers": [("日常決済", "基本還元率と対象外取引を確認"), ("特定店舗", "優遇条件とポイント上限を確認"), ("旅行・保険", "利用付帯条件と補償額を確認")],
+        "method": ["基本還元率と対象外", "年会費・年間利用条件", "ポイントの使い道", "保険・リボ・分割手数料"],
+        "terms": [("最大還元率", "複数条件を満たした一部利用での上限値"), ("利用付帯", "対象旅行代金などをカードで支払うことが保険条件になる方式"), ("リボ払い", "毎月の支払額を一定にする代わりに手数料が発生する支払方式")],
+    },
+    "investment-account-services": {
+        "intent": "ネット証券をNISA 取扱商品 手数料 操作性で選ぶ",
+        "answers": [("投信積立", "商品数より買いたい投信と積立方法を確認"), ("国内株・米国株", "売買 為替 情報ツールの費用を分ける"), ("初心者", "問い合わせ方法と画面の分かりやすさを比較")],
+        "method": ["NISAで買いたい商品", "売買・為替・信託報酬", "積立とポイント条件", "アプリ・PC・サポート"],
+        "terms": [("NISA", "一定の投資枠で得た利益が非課税になる制度"), ("信託報酬", "投資信託の保有中に継続して負担する運用管理費用"), ("為替手数料", "円と外貨を交換するときに生じるコスト")],
+    },
+    "streaming-services": {
+        "intent": "動画配信サービスを見たい作品 月額 同時視聴 画質で選ぶ",
+        "answers": [("映画・ドラマ", "見放題とレンタル作品を分けて検索"), ("アニメ", "作品数より見たいシリーズの配信範囲を確認"), ("家族利用", "同時視聴と同一世帯ルールを確認")],
+        "method": ["見たい作品の現在の配信", "月額内と追加課金", "同時視聴・プロフィール", "画質・広告・ダウンロード"],
+        "terms": [("見放題", "月額内で視聴できる作品 配信終了や対象外作品がある"), ("PPV", "作品ごとにレンタルまたは購入料金を払う方式"), ("同時視聴", "同じ契約で同時に再生できる台数 条件は事業者ごとに異なる")],
+    },
+    "fortune-consultation-services": {
+        "intent": "電話占いと相談サービスを1分料金 通話料 利用上限で比べる",
+        "answers": [("短時間相談", "質問を一つに絞り上限時間を決める"), ("初回特典", "無料表記ではなく適用上限と通常料金を確認"), ("相談先選び", "経歴表示より料金 待機時間 相談分野を確認")],
+        "method": ["1分・1通あたり料金", "通話料とポイント購入", "初回特典の上限", "後払い・退会・利用停止"],
+        "terms": [("1分料金", "通話時間に応じて加算される鑑定料金"), ("初回特典", "対象者 時間 金額に上限がある割引や無料枠"), ("後払い", "利用後に精算する方式 使い過ぎを防ぐ上限設定が重要")],
+    },
+}
+
+
 def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dict[str, object]:
     """Build a small static comparison site.
 
@@ -153,6 +205,7 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
             body = (
                 render_comparison_intro(page, comparison_rows, offers, offer_assets)
                 + render_offer_section(page.slug, comparison_rows, offers, offer_assets, trend_rows)
+                + render_a8_inline_break(page.slug)
                 + render_trend_evidence(page.slug, trend_rows)
                 + render_comparison_axis(comparison_rows, offer_assets)
                 + body
@@ -163,9 +216,17 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
             body = (
                 '<article class="page-card editorial-article">'
                 + body
+                + render_a8_inline_break(page.slug)
                 + '<aside class="article-next"><span>次に見る</span><strong>候補を比べて確認する</strong>'
                 + '<a class="button" href="%s.html">比較ガイドを見る</a></aside></article>' % html.escape(target_slug, quote=True)
             )
+        if page.kind not in {"comparison", "article"} and page.slug != "index":
+            inline_ad = render_a8_inline_break(page.slug)
+            if inline_ad:
+                first_section_end = body.find("</section>")
+                if first_section_end >= 0:
+                    insert_at = first_section_end + len("</section>")
+                    body = body[:insert_at] + inline_ad + body[insert_at:]
         body += render_a8_banner_block(page.slug)
         html_doc = render_layout(
             page.title, body, page.slug, slugs, settings.site_base_url,
@@ -511,6 +572,34 @@ def render_services_hub() -> str:
     )
 
 
+def _render_service_expertise(slug: str) -> str:
+    expert = SERVICE_EXPERTISE.get(slug)
+    if not expert:
+        return ""
+    answers = "".join(
+        '<article><span>%s</span><strong>%s</strong></article>' % (html.escape(label), html.escape(answer))
+        for label, answer in expert["answers"]
+    )
+    methods = "".join(
+        '<li><b>%02d</b><span>%s</span></li>' % (index, html.escape(item))
+        for index, item in enumerate(expert["method"], 1)
+    )
+    terms = "".join(
+        '<details><summary>%s</summary><p>%s</p></details>' % (html.escape(term), html.escape(description))
+        for term, description in expert["terms"]
+    )
+    return (
+        '<section class="service-search-answer" aria-label="検索目的への回答">'
+        '<header><small>SEARCH INTENT</small><h2>%s</h2>'
+        '<p>万人向けの1位ではなく、使い方から候補を絞ります。</p></header>'
+        '<div class="service-answer-grid">%s</div></section>'
+        '<section class="service-method"><div><small>HOW WE COMPARE</small>'
+        '<h2>このページの比較基準</h2><p>広告報酬ではなく、次の条件を同じ順番で確認します。</p></div>'
+        '<ol>%s</ol></section>'
+        '<section class="service-glossary"><small>WORDS TO KNOW</small><h2>比較前に知っておきたい用語</h2>%s</section>'
+    ) % (html.escape(expert["intent"]), answers, methods, terms)
+
+
 def render_service_detail(page: SitePage, article_body: str) -> str:
     meta = SERVICE_PAGE_META[page.slug]
     headings = [
@@ -550,6 +639,7 @@ def render_service_detail(page: SitePage, article_body: str) -> str:
       <a href="editorial-policy.html">調査と掲載の方針</a>
     </aside>
   </header>
+  %s
   <section class="service-decision-flow"><header><small>3 STEP</small><h2>契約前に先に決めること</h2></header><ol>%s</ol></section>
   <div class="service-check-strip">%s</div>
   <nav class="service-toc" aria-label="このページの目次"><b>このページで分かること</b>%s</nav>
@@ -563,7 +653,7 @@ def render_service_detail(page: SitePage, article_body: str) -> str:
 """ % (
         html.escape(meta["label"]), html.escape(page.title), html.escape(meta["lead"]),
         html.escape(_heading_id(comparison_heading), quote=True), html.escape(_heading_id(detail_heading), quote=True),
-        date.today().isoformat().replace("-", "."), questions, checks, toc, article_body, faq_items,
+        date.today().isoformat().replace("-", "."), _render_service_expertise(page.slug), questions, checks, toc, article_body, faq_items,
     )
 
 
@@ -2596,6 +2686,32 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
 .service-detail-hero aside strong { margin:12px 0 6px; font-family:var(--font-display); font-size:31px; }
 .service-detail-hero aside p { color:#526176; font-size:13px; line-height:1.7; }
 .service-detail-hero aside a { color:#175dbd; font-size:13px; font-weight:800; }
+.service-search-answer { display:grid; grid-template-columns:minmax(260px,.8fr) minmax(0,1.8fr); gap:22px; margin:0 0 16px; padding:26px; border:1px solid #d8e4f8; border-radius:24px; background:#fff; }
+.service-search-answer header small,.service-method small,.service-glossary > small { color:#2875ef; font-size:11px; font-weight:900; letter-spacing:.12em; }
+.service-search-answer header h2 { margin:7px 0 9px; padding:0; border:0; font-size:27px; line-height:1.35; }
+.service-search-answer header h2::before { display:none; }
+.service-search-answer header p { margin:0; color:#5b687c; font-size:13px; line-height:1.7; }
+.service-answer-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.service-answer-grid article { min-width:0; padding:16px; border-radius:16px; background:#f4f8ff; }
+.service-answer-grid span,.service-answer-grid strong { display:block; }
+.service-answer-grid span { margin-bottom:6px; color:#2875ef; font-size:12px; font-weight:900; }
+.service-answer-grid strong { font-size:14px; line-height:1.65; }
+.service-method { display:grid; grid-template-columns:240px minmax(0,1fr); gap:20px; margin:0 0 16px; padding:24px; border-radius:24px; background:#f7f4ed; }
+.service-method h2 { margin:7px 0 8px; padding:0; border:0; font-size:27px; }
+.service-method h2::before { display:none; }
+.service-method p { margin:0; color:#596579; font-size:13px; line-height:1.7; }
+.service-method ol { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; margin:0; padding:0; list-style:none; }
+.service-method li { padding:14px; border:1px solid #ded8cc; border-radius:14px; background:#fff; }
+.service-method li b,.service-method li span { display:block; }
+.service-method li b { color:#a16a20; font-size:11px; }
+.service-method li span { margin-top:5px; font-size:13px; font-weight:800; line-height:1.55; }
+.service-glossary { display:grid; grid-template-columns:180px repeat(3,minmax(0,1fr)); gap:10px; align-items:start; margin:0 0 18px; padding:20px; border:1px solid #dbe3ef; border-radius:20px; background:#fff; }
+.service-glossary > small { grid-column:1; }
+.service-glossary > h2 { grid-column:1; margin:5px 0 0; padding:0; border:0; font-size:23px; line-height:1.35; }
+.service-glossary > h2::before { display:none; }
+.service-glossary details { padding:13px; border-radius:13px; background:#f7f9fc; }
+.service-glossary summary { cursor:pointer; font-weight:900; }
+.service-glossary p { margin:8px 0 0; color:#536176; font-size:12px; line-height:1.65; }
 .service-decision-flow { display:grid; grid-template-columns:250px minmax(0,1fr); gap:20px; margin:0 0 14px; padding:24px; border-radius:24px; background:#101b33; color:#fff; }
 .service-decision-flow header small { color:#8db5ff; font-weight:900; letter-spacing:.12em; }
 .service-decision-flow header h2 { margin:7px 0 0; padding:0; border:0; color:#fff; font-size:27px; }
@@ -2647,6 +2763,16 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
 .a8-banner-copy dt { color:#2365d8; font-size:12px; font-weight:800; }
 .a8-banner-copy dd { margin:0; color:#3f4b5e; font-size:12px; line-height:1.6; }
 .a8-ad-note { margin:16px 0 0; color:#667085; font-size:12px; }
+.a8-inline-break { display:grid; grid-template-columns:92px 190px minmax(0,1fr); align-items:center; gap:18px; max-width:960px; margin:34px auto; padding:14px 18px; overflow:hidden; border:1px solid #dce6f8; border-radius:20px; background:linear-gradient(120deg,#f7faff 0%,#fff 55%,#f7f3ff 100%); box-shadow:0 12px 32px rgba(44,64,105,.08); }
+.a8-inline-label { display:grid; gap:5px; align-content:center; }
+.a8-inline-label span { width:max-content; padding:5px 9px; border-radius:999px; background:#1f5ed8; color:#fff; font-size:11px; font-weight:900; letter-spacing:.12em; }
+.a8-inline-label small { color:#61708a; font-size:11px; line-height:1.45; }
+.a8-inline-media { display:flex; align-items:center; justify-content:center; height:120px; overflow:hidden; border-radius:14px; background:#fff; }
+.a8-inline-media > a { display:block; line-height:0; }
+.a8-inline-media img[width="300"] { display:block; width:144px; height:auto; }
+.a8-inline-copy h3 { margin:0 0 5px; font-size:19px; line-height:1.4; }
+.a8-inline-copy p { margin:0 0 6px; color:#45536a; font-size:13px; line-height:1.65; }
+.a8-inline-copy small { color:#2563eb; font-size:11px; font-weight:800; line-height:1.5; }
 @media (max-width: 560px) {
   .service-hub-hero { margin:14px 10px; padding:24px 18px; border-radius:22px; }
   .service-hub-hero h1 { font-size:34px; }
@@ -2665,6 +2791,13 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .service-detail-hero { grid-template-columns:1fr; padding:22px 17px; border-radius:22px; }
   .service-detail-hero h1 { font-size:34px; overflow-wrap:normal; word-break:keep-all; }
   .service-detail-lead { font-size:15px; }
+  .service-search-answer { grid-template-columns:1fr; padding:17px; }
+  .service-search-answer header h2 { font-size:23px; }
+  .service-answer-grid { grid-template-columns:1fr; }
+  .service-method { grid-template-columns:1fr; padding:17px; }
+  .service-method ol { grid-template-columns:1fr 1fr; }
+  .service-glossary { grid-template-columns:1fr; padding:16px; }
+  .service-glossary > small,.service-glossary > h2 { grid-column:1; }
   .service-decision-flow { grid-template-columns:1fr; padding:18px; }
   .service-decision-flow ol { grid-template-columns:1fr; }
   .service-check-strip { grid-template-columns:1fr 1fr; }
@@ -2719,6 +2852,12 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .a8-banner-card { grid-template-columns:140px minmax(0,1fr); width:100%; padding:12px; gap:12px; }
   .a8-banner-media img[width="300"] { width:140px; }
   .a8-banner-copy h3 { font-size:17px; }
+  .a8-inline-break { grid-template-columns:88px minmax(0,1fr); gap:11px; margin:22px 0; padding:11px; border-radius:18px; }
+  .a8-inline-label { grid-column:1 / -1; display:flex; align-items:center; gap:8px; }
+  .a8-inline-media { width:88px; height:88px; }
+  .a8-inline-media img[width="300"] { width:88px; }
+  .a8-inline-copy h3 { font-size:16px; }
+  .a8-inline-copy p { display:-webkit-box; overflow:hidden; font-size:12px; line-height:1.55; -webkit-box-orient:vertical; -webkit-line-clamp:3; }
   .a8-banner-copy p { font-size:13px; }
   .a8-banner-copy dl div { grid-template-columns:1fr; gap:3px; }
 }

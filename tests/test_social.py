@@ -76,7 +76,7 @@ class SocialTest(unittest.TestCase):
             self.assertEqual(export_queue(settings, path), 3)
             self.assertTrue(path.exists())
 
-    def test_x_post_is_trimmed_with_japanese_weighted_length(self):
+    def test_x_premium_post_keeps_long_copy_with_safety_ceiling(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             settings = settings_for(root)
@@ -86,7 +86,12 @@ class SocialTest(unittest.TestCase):
             with transaction(settings.database_path) as conn:
                 enqueue_social_assets(conn, settings, content_id, "article-1", {"x": [long_text], "threads": [], "instagram": []})
             post = next(row for row in list_queue(settings) if row["platform"] == "x")
-            self.assertLessEqual(_x_weighted_len(post["post_text"]), 280)
+            self.assertGreater(_x_weighted_len(post["post_text"]), 280)
+            self.assertLessEqual(_x_weighted_len(post["post_text"]), 25000)
+
+    def test_x_post_keeps_editorial_paragraph_breaks(self):
+        fitted = _fit_text("韓国で話題\n\nなぜ注目？\n現地SNSで紹介が増加", "x", "")
+        self.assertIn("\n\nなぜ注目？\n", fitted)
 
     def test_instagram_caption_keeps_paragraph_breaks(self):
         fitted = _fit_text("アメリカで検索急上昇\n\n使う場面を確認", "instagram", "")
