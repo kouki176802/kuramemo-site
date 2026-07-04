@@ -355,6 +355,8 @@ def _kurara_image(kind: str, title: str = "") -> str:
         "compare": "kurara-compare-v3.png",
         "recommend": "kurara-recommend-v3.png",
         "caution": "kurara-caution-v3.png",
+        "puzzled": "kurara-puzzled-v4.png",
+        "smile": "kurara-x-icon-v4.png",
     }
     filename = files.get(kind, files["compare"])
     label = title or {
@@ -362,6 +364,8 @@ def _kurara_image(kind: str, title: str = "") -> str:
         "compare": "比較条件を考えるくらら",
         "recommend": "向いている人を案内するくらら",
         "caution": "注意点を伝えるくらら",
+        "puzzled": "比較候補を見比べるくらら",
+        "smile": "笑顔で案内するくらら",
     }.get(kind, "商品を解説するくらら")
     return '<img src="assets/brand/%s" alt="%s" loading="lazy">' % (
         html.escape(filename, quote=True), html.escape(label, quote=True),
@@ -755,10 +759,22 @@ def _service_provider_ctas(article_body: str) -> str:
         ) % (match.group(0), html.escape(href, quote=True))
 
     article_body = re.sub(r'(<h3 id="[^"]+">)(.*?)(</h3>)', add_cta, article_body)
-    # The existing provider paragraph becomes the character's speech bubble.
+    # Keep the character editorial rather than repetitive: she appears at key
+    # comparison turns, while the other provider notes stay as normal copy.
+    provider_index = 0
+
+    def narrate_selected(match: re.Match[str]) -> str:
+        nonlocal provider_index
+        provider_index += 1
+        if provider_index == 1:
+            return match.group(1) + _narrated_explanation(match.group(2), "puzzled")
+        if provider_index in {4, 7}:
+            return match.group(1) + _narrated_explanation(match.group(2), "recommend")
+        return match.group(1) + '<div class="service-provider-copy">%s</div>' % match.group(2)
+
     return re.sub(
         r'(<div class="service-provider-heading">.*?</div>)\s*(<p>.*?</p>)',
-        lambda match: match.group(1) + _narrated_explanation(match.group(2), "compare"),
+        narrate_selected,
         article_body,
         flags=re.DOTALL,
     )
@@ -779,13 +795,12 @@ def _service_decision_guide(slug: str) -> str:
         return ""
     return (
         '<section class="service-decision-guide">'
-        '<article class="decision-positive">%s<small>契約後に目指せる状態</small><p>%s</p></article>'
-        '<article class="decision-negative">%s<small>今は契約しない方がよい人</small><p>%s</p></article>'
+        '<article class="decision-positive"><small>契約後に目指せる状態</small><p>%s</p></article>'
+        '<article class="decision-negative"><small>今は契約しない方がよい人</small><p>%s</p></article>'
         '<article class="decision-gate"><small>申込み前の最終条件</small><strong>%s</strong></article>'
         '</section>'
     ) % (
-        _kurara_image("recommend"), html.escape(guide["outcome"]),
-        _kurara_image("caution"), html.escape(guide["avoid"]), html.escape(guide["commitment"]),
+        html.escape(guide["outcome"]), html.escape(guide["avoid"]), html.escape(guide["commitment"]),
     )
 
 
@@ -844,7 +859,7 @@ def render_service_detail(page: SitePage, article_body: str) -> str:
   </aside>
 </article>
 """ % (
-        _kurara_image("trend", "この比較ページを案内するくらら"),
+        _kurara_image("smile", "この比較ページを案内するくらら"),
         html.escape(meta["label"]), _service_display_title(page.title), html.escape(meta["lead"]),
         html.escape(_heading_id(comparison_heading), quote=True), html.escape(_heading_id(detail_heading), quote=True),
         date.today().isoformat().replace("-", "."), _render_service_expertise(page.slug), questions,
@@ -919,7 +934,7 @@ def render_category_intro(
   <ul>%s</ul>
 </section>
 """ % (
-        _kurara_image("trend", "%sカテゴリを案内するくらら" % page.title),
+        _kurara_image("smile", "%sカテゴリを案内するくらら" % page.title),
         html.escape(profile["kicker"]),
         _inline(page.title),
         html.escape(profile["lead"]).replace("\n", "<br>"),
@@ -1332,7 +1347,7 @@ def render_comparison_intro(
   </aside>
 </section>
 """ % (
-        _kurara_image("compare", "この商品比較を案内するくらら"),
+        _kurara_image("puzzled", "商品候補を比較するくらら"),
         html.escape(category),
         _inline(title_main),
         '<p class="comparison-title-sub">%s</p>' % _inline(title_sub) if title_sub else "",
@@ -2429,7 +2444,7 @@ def _home_landing(offer_assets: Dict[str, Dict[str, str]], trend_rows: List[Dict
   </div>
 </section>
 """ % (
-        _kurara_image("trend", "話題の商品を調査するくらら"), topic_summary,
+        _kurara_image("smile", "くらメモを案内するくらら"), topic_summary,
         featured_slug,
         featured_trend,
         featured_notes, trend_cards,
@@ -2460,7 +2475,7 @@ body.home { background:
 a { color: var(--accent); }
 .site-header { position: sticky; top:0; z-index:5; display:flex; gap:24px; justify-content:space-between; align-items:center; padding:14px clamp(18px, 4vw, 42px); border-bottom:1px solid rgba(17,17,17,.12); background:rgba(255,250,240,.86); backdrop-filter: blur(18px); }
 .brand { display:flex; flex-direction:column; line-height:1.05; font-family:var(--display); font-weight:900; text-decoration:none; color:var(--ink); letter-spacing:-.04em; font-size:20px; }
-.title-mascot { position:absolute; z-index:3; top:16px; right:18px; width:62px; height:62px; overflow:hidden; border:3px solid rgba(255,255,255,.92); border-radius:50%; background:#e8efff; box-shadow:0 8px 22px rgba(35,77,145,.16); pointer-events:none; }
+.title-mascot { position:absolute; z-index:3; top:16px; right:18px; width:76px; height:76px; overflow:hidden; border:3px solid rgba(255,255,255,.92); border-radius:50%; background:#e8efff; box-shadow:0 8px 22px rgba(35,77,145,.16); pointer-events:none; }
 .title-mascot img { display:block; width:100%; height:100%; object-fit:cover; object-position:center 25%; }
 .narrated-explanation { display:grid; grid-template-columns:74px minmax(0,1fr); align-items:end; gap:11px; margin:12px 0 18px; }
 .narrator-portrait { width:74px; height:88px; overflow:hidden; border:2px solid #d4e1f8; border-radius:18px 18px 6px 18px; background:#eef4ff; }
@@ -2468,12 +2483,12 @@ a { color: var(--accent); }
 .narrator-bubble { position:relative; min-width:0; padding:13px 15px; border:1px solid #dce6f8; border-radius:18px 18px 18px 5px; background:#fff; color:#26364c; box-shadow:0 9px 24px rgba(31,63,111,.07); }
 .narrator-bubble::before { content:""; position:absolute; left:-8px; bottom:17px; width:14px; height:14px; border-left:1px solid #dce6f8; border-bottom:1px solid #dce6f8; background:#fff; transform:rotate(45deg); }
 .narrator-bubble > p { margin:0; }
+.service-provider-copy { margin:10px 0 22px; padding:2px 16px 2px 18px; border-left:3px solid #dbe6fa; color:#34445d; }
+.service-provider-copy > p { margin:0; }
 .offer-card .narrated-explanation { grid-template-columns:48px minmax(0,1fr); gap:7px; margin:10px 0 12px; }
 .offer-card .narrator-portrait { width:48px; height:64px; border-radius:13px 13px 4px 13px; }
 .offer-card .narrator-bubble { padding:9px 10px; border-radius:13px 13px 13px 4px; font-size:12px; line-height:1.55; }
 .offer-card .narrator-bubble .offer-evidence { margin:0; padding:0; border:0; background:transparent; box-shadow:none; }
-.service-decision-guide article { position:relative; padding-left:72px; }
-.service-decision-guide article > img { position:absolute; left:12px; top:14px; width:48px; height:48px; object-fit:cover; object-position:center 22%; border:2px solid #fff; border-radius:50%; box-shadow:0 5px 14px rgba(31,63,111,.12); }
 .brand small { font-family:var(--mono); color:var(--accent2); font-size:10px; letter-spacing:.12em; text-transform:uppercase; margin-top:5px; }
 nav { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; font-size:13px; }
 nav a { position:relative; display:inline-flex; align-items:center; min-height:34px; padding:6px 10px; border:1px solid transparent; border-radius:999px; text-decoration:none; color:var(--muted); font-weight:900; white-space:nowrap; transition:background .2s ease, border-color .2s ease, color .2s ease, transform .2s ease; }
@@ -3027,7 +3042,6 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .narrated-explanation { grid-template-columns:58px minmax(0,1fr); gap:8px; }
   .narrator-portrait { width:58px; height:74px; border-radius:14px 14px 5px 14px; }
   .narrator-bubble { padding:11px 12px; font-size:13px; line-height:1.65; }
-  .service-decision-guide article { padding-left:64px; }
   .service-hub-hero { margin:14px 10px; padding:24px 18px; border-radius:22px; }
   .service-hub-hero h1 { font-size:34px; }
   .service-hub-hero > p { font-size:15px; }
