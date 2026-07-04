@@ -244,6 +244,8 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
         body = markdown_to_html(page_markdown)
         if page.slug == "index":
             body = _home_landing(offer_assets, trend_rows)
+        if page.slug == "about":
+            body = render_about_mascot(body)
         if page.slug == "category-services":
             body = render_services_hub()
         if page.slug in SERVICE_PAGE_META:
@@ -259,6 +261,7 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
             comparison_rows = active_rows or rows
             body = (
                 render_comparison_intro(page, comparison_rows, offers, offer_assets)
+                + render_mascot_callout("なぜ今注目されているかと 買う前に見る条件を私が先に整理します", "compare")
                 + render_offer_section(page.slug, comparison_rows, offers, offer_assets, trend_rows)
                 + render_a8_inline_break(page.slug)
                 + render_trend_evidence(page.slug, trend_rows)
@@ -347,6 +350,30 @@ def _service_on_page_score(html_doc: str) -> Dict[str, object]:
         "構造化データ": 5 if '"FAQPage"' in html_doc else 0,
     }
     return {"score": sum(checks.values()), "checks": checks, "note": "検索順位・ドメイン評価・実体験は別評価"}
+
+
+def render_mascot_callout(message: str, variant: str = "default") -> str:
+    """A compact, reusable guide character callout with accessible text."""
+    return (
+        '<aside class="mascot-callout mascot-%s" aria-label="くらメモ案内役 くららのポイント">'
+        '<div class="mascot-portrait"><img src="assets/brand/kurara-character-sheet.png" '
+        'alt="くらメモの案内役 くらら"></div>'
+        '<div class="mascot-bubble"><small>KURARA / TREND GUIDE</small>'
+        '<p>%s</p><a href="about.html#案内役くらら">くららについて</a></div></aside>'
+    ) % (html.escape(variant, quote=True), html.escape(message))
+
+
+def render_about_mascot(article_body: str) -> str:
+    return (
+        '<section class="mascot-profile" id="案内役くらら">'
+        '<div><span class="section-kicker">SITE NAVIGATOR</span><h2>案内役 くらら</h2>'
+        '<p>SNSやニュースの話題を見つけ なぜ注目されているのかと選ぶ条件を読者目線で案内するオリジナルキャラクターです</p>'
+        '<dl><div><dt>役割</dt><dd>トレンドの理由と比較ポイントを短く案内</dd></div>'
+        '<div><dt>得意分野</dt><dd>海外トレンド 商品比較 契約前の注意点</dd></div>'
+        '<div><dt>運用ルール</dt><dd>確認できない流行や使用体験を作らない</dd></div></dl></div>'
+        '<img src="assets/brand/kurara-character-sheet.png" alt="くららの全身 ポーズ 表情をまとめたキャラクターシート">'
+        '</section>' + article_body
+    )
 
 
 def render_related_guides(
@@ -782,6 +809,7 @@ def render_service_detail(page: SitePage, article_body: str) -> str:
     </aside>
   </header>
   %s
+  %s
   <section class="service-decision-flow"><header><small>3 STEP</small><h2>契約前に先に決めること</h2></header><ol>%s</ol></section>
   %s
   <div class="service-check-strip">%s</div>
@@ -797,7 +825,9 @@ def render_service_detail(page: SitePage, article_body: str) -> str:
 """ % (
         html.escape(meta["label"]), html.escape(page.title), html.escape(meta["lead"]),
         html.escape(_heading_id(comparison_heading), quote=True), html.escape(_heading_id(detail_heading), quote=True),
-        date.today().isoformat().replace("-", "."), _render_service_expertise(page.slug), questions,
+        date.today().isoformat().replace("-", "."),
+        render_mascot_callout("料金だけで決めず 契約後に困りやすい条件まで一緒に確認します", "service"),
+        _render_service_expertise(page.slug), questions,
         _service_decision_guide(page.slug), checks, toc, article_body,
         _service_evidence_note(page.slug), faq_items,
     )
@@ -859,6 +889,7 @@ def render_category_intro(
 %s
 %s
 %s
+%s
 <section class="category-playbook">
   <div>
     <div class="section-kicker">選ぶ前の確認</div>
@@ -874,6 +905,7 @@ def render_category_intro(
         '<section class="category-comparison-grid">%s</section>' % cards if cards else "",
         product_cards,
         article_cards,
+        render_mascot_callout("話題の商品でも 自分の用途と条件に合うかを先に絞り込みましょう", "category"),
         html.escape(profile["playbook_title"]),
         html.escape(profile["playbook_lead"]),
         playbook,
@@ -1888,6 +1920,7 @@ def _schema_json(title: str, description: str, canonical_url: str, slug: str) ->
             "@type": "Organization",
             "name": "くらメモ",
             "url": "https://kuramemo-mk.com/",
+            "sameAs": ["https://x.com/m0506k"],
         },
     }
     if canonical_url:
@@ -2349,6 +2382,7 @@ def _home_landing(offer_assets: Dict[str, Dict[str, str]], trend_rows: List[Dict
   </div>
 </section>
 %s
+%s
 <section class="comparison-index" id="comparison-index">
   <div class="section-kicker">商品ガイド</div>
   <h2>気になるものから開く</h2>
@@ -2374,6 +2408,7 @@ def _home_landing(offer_assets: Dict[str, Dict[str, str]], trend_rows: List[Dict
         featured_slug,
         featured_trend,
         featured_notes,
+        render_mascot_callout("どこでなぜ話題なのかを確認してから 本当に必要な候補へ進みましょう", "home"),
         trend_cards,
         _home_figure(offer_assets, "usb_c_charger_small_research", "USB-C充電器"),
         _home_figure(offer_assets, "home_hair_removal_research", "美容・身だしなみ用品"),
@@ -2402,6 +2437,21 @@ body.home { background:
 a { color: var(--accent); }
 .site-header { position: sticky; top:0; z-index:5; display:flex; gap:24px; justify-content:space-between; align-items:center; padding:14px clamp(18px, 4vw, 42px); border-bottom:1px solid rgba(17,17,17,.12); background:rgba(255,250,240,.86); backdrop-filter: blur(18px); }
 .brand { display:flex; flex-direction:column; line-height:1.05; font-family:var(--display); font-weight:900; text-decoration:none; color:var(--ink); letter-spacing:-.04em; font-size:20px; }
+.mascot-callout { display:grid; grid-template-columns:104px minmax(0,1fr); align-items:end; gap:16px; max-width:960px; margin:22px auto 30px; padding:12px 18px 12px 12px; border:1px solid #cfe0ff; border-radius:24px; background:linear-gradient(120deg,#f4f8ff,#faf7ff); box-shadow:0 14px 34px rgba(47,124,246,.10); }
+.mascot-portrait { align-self:stretch; min-height:112px; overflow:hidden; border-radius:18px; background:#eaf1ff; }
+.mascot-portrait img { width:100%; height:100%; min-height:112px; object-fit:cover; object-position:71% 17%; transform:scale(1.8); }
+.mascot-bubble { position:relative; align-self:center; padding:13px 16px; border-radius:18px; background:#fff; }
+.mascot-bubble::before { content:""; position:absolute; left:-10px; top:30px; border-width:9px 10px 9px 0; border-style:solid; border-color:transparent #fff transparent transparent; }
+.mascot-bubble small { color:#2f7cf6; font-size:11px; font-weight:900; letter-spacing:.12em; }
+.mascot-bubble p { margin:4px 0 2px; color:#172b55; font-size:16px; font-weight:800; line-height:1.65; }
+.mascot-bubble a { color:#5b5bd6; font-size:12px; font-weight:800; }
+.mascot-profile { display:grid; grid-template-columns:minmax(280px,.8fr) minmax(0,1.2fr); gap:24px; margin:0 0 34px; padding:24px; border:1px solid #cfddf7; border-radius:26px; background:linear-gradient(135deg,#f4f8ff,#faf7ff); }
+.mascot-profile h2 { margin:7px 0 12px; }
+.mascot-profile > img { width:100%; border-radius:18px; box-shadow:0 14px 34px rgba(23,43,85,.12); }
+.mascot-profile dl { display:grid; gap:8px; margin-top:18px; }
+.mascot-profile dl div { padding-top:8px; border-top:1px solid #d9e3f5; }
+.mascot-profile dt { color:#2f7cf6; font-size:11px; font-weight:900; }
+.mascot-profile dd { margin:2px 0 0; color:#26364c; font-size:13px; }
 .brand small { font-family:var(--mono); color:var(--accent2); font-size:10px; letter-spacing:.12em; text-transform:uppercase; margin-top:5px; }
 nav { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; font-size:13px; }
 nav a { position:relative; display:inline-flex; align-items:center; min-height:34px; padding:6px 10px; border:1px solid transparent; border-radius:999px; text-decoration:none; color:var(--muted); font-weight:900; white-space:nowrap; transition:background .2s ease, border-color .2s ease, color .2s ease, transform .2s ease; }
@@ -2950,6 +3000,11 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
 .a8-inline-copy p { margin:0 0 6px; color:#45536a; font-size:13px; line-height:1.65; }
 .a8-inline-copy small { color:#2563eb; font-size:11px; font-weight:800; line-height:1.5; }
 @media (max-width: 560px) {
+  .mascot-callout { grid-template-columns:74px minmax(0,1fr); gap:9px; margin:16px 0 22px; padding:9px; border-radius:19px; }
+  .mascot-portrait,.mascot-portrait img { min-height:92px; }
+  .mascot-bubble { padding:10px 11px; }
+  .mascot-bubble p { font-size:14px; line-height:1.55; }
+  .mascot-profile { grid-template-columns:1fr; padding:15px; border-radius:20px; }
   .service-hub-hero { margin:14px 10px; padding:24px 18px; border-radius:22px; }
   .service-hub-hero h1 { font-size:34px; }
   .service-hub-hero > p { font-size:15px; }
