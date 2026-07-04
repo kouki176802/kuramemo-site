@@ -244,8 +244,6 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
         body = markdown_to_html(page_markdown)
         if page.slug == "index":
             body = _home_landing(offer_assets, trend_rows)
-        if page.slug == "about":
-            body = render_about_mascot(body)
         if page.slug == "category-services":
             body = render_services_hub()
         if page.slug in SERVICE_PAGE_META:
@@ -261,7 +259,6 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
             comparison_rows = active_rows or rows
             body = (
                 render_comparison_intro(page, comparison_rows, offers, offer_assets)
-                + render_mascot_callout("なぜ今注目されているかと 買う前に見る条件を私が先に整理します", "compare")
                 + render_offer_section(page.slug, comparison_rows, offers, offer_assets, trend_rows)
                 + render_a8_inline_break(page.slug)
                 + render_trend_evidence(page.slug, trend_rows)
@@ -352,29 +349,30 @@ def _service_on_page_score(html_doc: str) -> Dict[str, object]:
     return {"score": sum(checks.values()), "checks": checks, "note": "検索順位・ドメイン評価・実体験は別評価"}
 
 
-def render_mascot_callout(message: str, variant: str = "default") -> str:
-    """A compact, reusable guide character callout with accessible text."""
-    return (
-        '<aside class="mascot-callout mascot-%s" aria-label="くらメモ案内役 くららのポイント">'
-        '<div class="mascot-portrait"><img src="assets/brand/kurara-guide-portrait-v2.png" '
-        'alt="くらメモの案内役 くらら"></div>'
-        '<div class="mascot-bubble"><small>KURARA / TREND GUIDE</small>'
-        '<p>%s</p><a href="about.html#案内役くらら">くららについて</a></div></aside>'
-    ) % (html.escape(variant, quote=True), html.escape(message))
-
-
-def _service_mascot_message(slug: str) -> str:
-    messages = {
-        "ai-school-services": "AIスクールは 学べる内容だけでなく 作りたい成果物と質問対応の範囲を先に決めると選びやすいです",
-        "mobile-carrier-services": "スマホ回線は 月額だけでなく普段使う場所と時間帯の通信品質まで確認しましょう",
-        "internet-line-services": "光回線は 特典額より工事費と必須オプションを含む実質負担で比べましょう",
-        "streaming-services": "動画配信は作品数より 見たい独占作品と追加課金の有無を先に確認しましょう",
-        "hair-removal-services": "脱毛は表示価格だけでなく 対象部位 追加費用 通える院まで含めた総額で見ましょう",
-        "credit-card-services": "カードは最大還元率より 自分が普段使う店で条件を満たせるかを確認しましょう",
-        "investment-account-services": "証券口座は特典より 取扱商品 手数料 サポートを自分の運用方法に合わせて選びましょう",
-        "fortune-consultation-services": "相談サービスは初回特典だけでなく 1分料金と通話料 利用上限を先に決めましょう",
+def _kurara_image(kind: str, title: str = "") -> str:
+    files = {
+        "trend": "kurara-trend-v3.png",
+        "compare": "kurara-compare-v3.png",
+        "recommend": "kurara-recommend-v3.png",
+        "caution": "kurara-caution-v3.png",
     }
-    return messages.get(slug, "料金だけで決めず 契約後に困りやすい条件まで一緒に確認します")
+    filename = files.get(kind, files["compare"])
+    label = title or {
+        "trend": "注目の理由を確認するくらら",
+        "compare": "比較条件を考えるくらら",
+        "recommend": "向いている人を案内するくらら",
+        "caution": "注意点を伝えるくらら",
+    }.get(kind, "商品を解説するくらら")
+    return '<img src="assets/brand/%s" alt="%s" loading="lazy">' % (
+        html.escape(filename, quote=True), html.escape(label, quote=True),
+    )
+
+
+def _narrated_explanation(content: str, kind: str = "compare") -> str:
+    return (
+        '<div class="narrated-explanation narrated-%s">'
+        '<div class="narrator-portrait">%s</div><div class="narrator-bubble">%s</div></div>'
+    ) % (html.escape(kind, quote=True), _kurara_image(kind), content)
 
 
 def _service_display_title(title: str) -> str:
@@ -389,17 +387,6 @@ def _service_display_title(title: str) -> str:
     return html.escape(title)
 
 
-def render_about_mascot(article_body: str) -> str:
-    return (
-        '<section class="mascot-profile" id="案内役くらら">'
-        '<div><span class="section-kicker">SITE NAVIGATOR</span><h2>案内役 くらら</h2>'
-        '<p>SNSやニュースの話題を見つけ なぜ注目されているのかと選ぶ条件を読者目線で案内するオリジナルキャラクターです</p>'
-        '<dl><div><dt>役割</dt><dd>トレンドの理由と比較ポイントを短く案内</dd></div>'
-        '<div><dt>得意分野</dt><dd>海外トレンド 商品比較 契約前の注意点</dd></div>'
-        '<div><dt>運用ルール</dt><dd>確認できない流行や使用体験を作らない</dd></div></dl></div>'
-        '<img src="assets/brand/kurara-character-sheet.png" alt="くららの全身 ポーズ 表情をまとめたキャラクターシート">'
-        '</section>' + article_body
-    )
 
 
 def render_related_guides(
@@ -767,7 +754,14 @@ def _service_provider_ctas(article_body: str) -> str:
             '<a href="%s" rel="nofollow noopener">公式条件を見る <span aria-hidden="true">→</span></a></div>'
         ) % (match.group(0), html.escape(href, quote=True))
 
-    return re.sub(r'(<h3 id="[^"]+">)(.*?)(</h3>)', add_cta, article_body)
+    article_body = re.sub(r'(<h3 id="[^"]+">)(.*?)(</h3>)', add_cta, article_body)
+    # The existing provider paragraph becomes the character's speech bubble.
+    return re.sub(
+        r'(<div class="service-provider-heading">.*?</div>)\s*(<p>.*?</p>)',
+        lambda match: match.group(1) + _narrated_explanation(match.group(2), "compare"),
+        article_body,
+        flags=re.DOTALL,
+    )
 
 
 def _service_evidence_note(slug: str) -> str:
@@ -785,12 +779,13 @@ def _service_decision_guide(slug: str) -> str:
         return ""
     return (
         '<section class="service-decision-guide">'
-        '<article class="decision-positive"><small>契約後に目指せる状態</small><p>%s</p></article>'
-        '<article class="decision-negative"><small>今は契約しない方がよい人</small><p>%s</p></article>'
+        '<article class="decision-positive">%s<small>契約後に目指せる状態</small><p>%s</p></article>'
+        '<article class="decision-negative">%s<small>今は契約しない方がよい人</small><p>%s</p></article>'
         '<article class="decision-gate"><small>申込み前の最終条件</small><strong>%s</strong></article>'
         '</section>'
     ) % (
-        html.escape(guide["outcome"]), html.escape(guide["avoid"]), html.escape(guide["commitment"]),
+        _kurara_image("recommend"), html.escape(guide["outcome"]),
+        _kurara_image("caution"), html.escape(guide["avoid"]), html.escape(guide["commitment"]),
     )
 
 
@@ -822,6 +817,7 @@ def render_service_detail(page: SitePage, article_body: str) -> str:
     return """
 <article class="service-detail">
   <header class="service-detail-hero">
+    <div class="title-mascot">%s</div>
     <div>
       <p class="service-detail-label">%s / 専門比較ガイド</p>
       <h1>%s</h1>
@@ -834,7 +830,6 @@ def render_service_detail(page: SitePage, article_body: str) -> str:
       <a href="editorial-policy.html">調査と掲載の方針</a>
     </aside>
   </header>
-  %s
   %s
   <section class="service-decision-flow"><header><small>3 STEP</small><h2>契約前に先に決めること</h2></header><ol>%s</ol></section>
   %s
@@ -849,11 +844,10 @@ def render_service_detail(page: SitePage, article_body: str) -> str:
   </aside>
 </article>
 """ % (
+        _kurara_image("trend", "この比較ページを案内するくらら"),
         html.escape(meta["label"]), _service_display_title(page.title), html.escape(meta["lead"]),
         html.escape(_heading_id(comparison_heading), quote=True), html.escape(_heading_id(detail_heading), quote=True),
-        date.today().isoformat().replace("-", "."),
-        render_mascot_callout(_service_mascot_message(page.slug), "service"),
-        _render_service_expertise(page.slug), questions,
+        date.today().isoformat().replace("-", "."), _render_service_expertise(page.slug), questions,
         _service_decision_guide(page.slug), checks, toc, article_body,
         _service_evidence_note(page.slug), faq_items,
     )
@@ -906,13 +900,13 @@ def render_category_intro(
     )
     return """
 <section class="category-hero">
+  <div class="title-mascot">%s</div>
   <div>
     <div class="section-kicker">%s</div>
     <h1>%s</h1>
     <p>%s</p>
   </div>
 </section>
-%s
 %s
 %s
 %s
@@ -925,13 +919,13 @@ def render_category_intro(
   <ul>%s</ul>
 </section>
 """ % (
+        _kurara_image("trend", "%sカテゴリを案内するくらら" % page.title),
         html.escape(profile["kicker"]),
         _inline(page.title),
         html.escape(profile["lead"]).replace("\n", "<br>"),
         '<section class="category-comparison-grid">%s</section>' % cards if cards else "",
         product_cards,
         article_cards,
-        render_mascot_callout("話題の商品でも 自分の用途と条件に合うかを先に絞り込みましょう", "category"),
         html.escape(profile["playbook_title"]),
         html.escape(profile["playbook_lead"]),
         playbook,
@@ -1319,6 +1313,7 @@ def render_comparison_intro(
     previews = "\n".join(_comparison_hero_preview(row, offer_assets or {}) for row in rows[:3])
     return """
 <section class="comparison-hero">
+  <div class="title-mascot">%s</div>
   <div class="comparison-hero-copy">
     <div class="section-kicker">選び方ガイド / %s</div>
     <h1>%s</h1>
@@ -1337,6 +1332,7 @@ def render_comparison_intro(
   </aside>
 </section>
 """ % (
+        _kurara_image("compare", "この商品比較を案内するくらら"),
         html.escape(category),
         _inline(title_main),
         '<p class="comparison-title-sub">%s</p>' % _inline(title_sub) if title_sub else "",
@@ -1521,6 +1517,9 @@ def _offer_card(
         image = _offer_image(asset or {}, offer.name or title)
         stats = _offer_stats(asset or {})
         evidence = _offer_listing_reason(row, asset or {}, trend)
+        note_text = row.get("notes", "")
+        evidence_kind = "trend" if trend or any(term in note_text for term in ("SNS", "韓国", "アメリカ", "話題")) else "recommend"
+        evidence = _narrated_explanation(evidence, evidence_kind)
         return """
 <article class="offer-card offer-card-active">
   <p class="offer-rank">No.%02d</p>
@@ -2382,6 +2381,7 @@ def _home_landing(offer_assets: Dict[str, Dict[str, str]], trend_rows: List[Dict
     topic_summary = html.escape(" / ".join(topic_labels) or "暑さ対策 / 防災備蓄 / 旅行外出")
     return """
 <section class="hero">
+  <div class="title-mascot">%s</div>
   <div class="hero-copy">
     <div class="eyebrow">SNS・ニュースの注目商品</div>
     <h1><span>SNSとニュースの</span><span>話題を先取り</span></h1>
@@ -2408,7 +2408,6 @@ def _home_landing(offer_assets: Dict[str, Dict[str, str]], trend_rows: List[Dict
   </div>
 </section>
 %s
-%s
 <section class="comparison-index" id="comparison-index">
   <div class="section-kicker">商品ガイド</div>
   <h2>気になるものから開く</h2>
@@ -2430,12 +2429,10 @@ def _home_landing(offer_assets: Dict[str, Dict[str, str]], trend_rows: List[Dict
   </div>
 </section>
 """ % (
-        topic_summary,
+        _kurara_image("trend", "話題の商品を調査するくらら"), topic_summary,
         featured_slug,
         featured_trend,
-        featured_notes,
-        render_mascot_callout("どこでなぜ話題なのかを確認してから 本当に必要な候補へ進みましょう", "home"),
-        trend_cards,
+        featured_notes, trend_cards,
         _home_figure(offer_assets, "usb_c_charger_small_research", "USB-C充電器"),
         _home_figure(offer_assets, "home_hair_removal_research", "美容・身だしなみ用品"),
         _home_figure(offer_assets, "creatine_research", "フィットネス補助食品"),
@@ -2463,21 +2460,20 @@ body.home { background:
 a { color: var(--accent); }
 .site-header { position: sticky; top:0; z-index:5; display:flex; gap:24px; justify-content:space-between; align-items:center; padding:14px clamp(18px, 4vw, 42px); border-bottom:1px solid rgba(17,17,17,.12); background:rgba(255,250,240,.86); backdrop-filter: blur(18px); }
 .brand { display:flex; flex-direction:column; line-height:1.05; font-family:var(--display); font-weight:900; text-decoration:none; color:var(--ink); letter-spacing:-.04em; font-size:20px; }
-.mascot-callout { display:grid; grid-template-columns:104px minmax(0,1fr); align-items:end; gap:16px; max-width:960px; margin:22px auto 30px; padding:12px 18px 12px 12px; border:1px solid #cfe0ff; border-radius:24px; background:linear-gradient(120deg,#f4f8ff,#faf7ff); box-shadow:0 14px 34px rgba(47,124,246,.10); }
-.mascot-portrait { align-self:stretch; min-height:112px; overflow:hidden; border-radius:18px; background:#eaf1ff; }
-.mascot-portrait img { display:block; width:100%; height:100%; min-height:112px; object-fit:cover; object-position:center 22%; }
-.mascot-bubble { position:relative; align-self:center; padding:13px 16px; border-radius:18px; background:#fff; }
-.mascot-bubble::before { content:""; position:absolute; left:-10px; top:30px; border-width:9px 10px 9px 0; border-style:solid; border-color:transparent #fff transparent transparent; }
-.mascot-bubble small { color:#2f7cf6; font-size:11px; font-weight:900; letter-spacing:.12em; }
-.mascot-bubble p { margin:4px 0 2px; color:#172b55; font-size:16px; font-weight:800; line-height:1.65; }
-.mascot-bubble a { color:#5b5bd6; font-size:12px; font-weight:800; }
-.mascot-profile { display:grid; grid-template-columns:minmax(280px,.8fr) minmax(0,1.2fr); gap:24px; margin:0 0 34px; padding:24px; border:1px solid #cfddf7; border-radius:26px; background:linear-gradient(135deg,#f4f8ff,#faf7ff); }
-.mascot-profile h2 { margin:7px 0 12px; }
-.mascot-profile > img { width:100%; border-radius:18px; box-shadow:0 14px 34px rgba(23,43,85,.12); }
-.mascot-profile dl { display:grid; gap:8px; margin-top:18px; }
-.mascot-profile dl div { padding-top:8px; border-top:1px solid #d9e3f5; }
-.mascot-profile dt { color:#2f7cf6; font-size:11px; font-weight:900; }
-.mascot-profile dd { margin:2px 0 0; color:#26364c; font-size:13px; }
+.title-mascot { position:absolute; z-index:3; top:16px; right:18px; width:62px; height:62px; overflow:hidden; border:3px solid rgba(255,255,255,.92); border-radius:50%; background:#e8efff; box-shadow:0 8px 22px rgba(35,77,145,.16); pointer-events:none; }
+.title-mascot img { display:block; width:100%; height:100%; object-fit:cover; object-position:center 25%; }
+.narrated-explanation { display:grid; grid-template-columns:74px minmax(0,1fr); align-items:end; gap:11px; margin:12px 0 18px; }
+.narrator-portrait { width:74px; height:88px; overflow:hidden; border:2px solid #d4e1f8; border-radius:18px 18px 6px 18px; background:#eef4ff; }
+.narrator-portrait img { display:block; width:100%; height:100%; object-fit:cover; object-position:center 22%; }
+.narrator-bubble { position:relative; min-width:0; padding:13px 15px; border:1px solid #dce6f8; border-radius:18px 18px 18px 5px; background:#fff; color:#26364c; box-shadow:0 9px 24px rgba(31,63,111,.07); }
+.narrator-bubble::before { content:""; position:absolute; left:-8px; bottom:17px; width:14px; height:14px; border-left:1px solid #dce6f8; border-bottom:1px solid #dce6f8; background:#fff; transform:rotate(45deg); }
+.narrator-bubble > p { margin:0; }
+.offer-card .narrated-explanation { grid-template-columns:48px minmax(0,1fr); gap:7px; margin:10px 0 12px; }
+.offer-card .narrator-portrait { width:48px; height:64px; border-radius:13px 13px 4px 13px; }
+.offer-card .narrator-bubble { padding:9px 10px; border-radius:13px 13px 13px 4px; font-size:12px; line-height:1.55; }
+.offer-card .narrator-bubble .offer-evidence { margin:0; padding:0; border:0; background:transparent; box-shadow:none; }
+.service-decision-guide article { position:relative; padding-left:72px; }
+.service-decision-guide article > img { position:absolute; left:12px; top:14px; width:48px; height:48px; object-fit:cover; object-position:center 22%; border:2px solid #fff; border-radius:50%; box-shadow:0 5px 14px rgba(31,63,111,.12); }
 .brand small { font-family:var(--mono); color:var(--accent2); font-size:10px; letter-spacing:.12em; text-transform:uppercase; margin-top:5px; }
 nav { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; font-size:13px; }
 nav a { position:relative; display:inline-flex; align-items:center; min-height:34px; padding:6px 10px; border:1px solid transparent; border-radius:999px; text-decoration:none; color:var(--muted); font-weight:900; white-space:nowrap; transition:background .2s ease, border-color .2s ease, color .2s ease, transform .2s ease; }
@@ -3027,11 +3023,11 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
 .a8-inline-copy p { margin:0 0 6px; color:#45536a; font-size:13px; line-height:1.65; }
 .a8-inline-copy small { color:#2563eb; font-size:11px; font-weight:800; line-height:1.5; }
 @media (max-width: 560px) {
-  .mascot-callout { grid-template-columns:74px minmax(0,1fr); gap:9px; margin:16px 0 22px; padding:9px; border-radius:19px; }
-  .mascot-portrait,.mascot-portrait img { min-height:92px; }
-  .mascot-bubble { padding:10px 11px; }
-  .mascot-bubble p { font-size:14px; line-height:1.55; }
-  .mascot-profile { grid-template-columns:1fr; padding:15px; border-radius:20px; }
+  .title-mascot { top:10px; right:10px; width:48px; height:48px; }
+  .narrated-explanation { grid-template-columns:58px minmax(0,1fr); gap:8px; }
+  .narrator-portrait { width:58px; height:74px; border-radius:14px 14px 5px 14px; }
+  .narrator-bubble { padding:11px 12px; font-size:13px; line-height:1.65; }
+  .service-decision-guide article { padding-left:64px; }
   .service-hub-hero { margin:14px 10px; padding:24px 18px; border-radius:22px; }
   .service-hub-hero h1 { font-size:34px; }
   .service-hub-hero > p { font-size:15px; }
