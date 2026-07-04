@@ -139,6 +139,17 @@ SERVICE_EXPERTISE = {
     },
 }
 
+SERVICE_SEARCH_TITLES = {
+    "internet-line-services": "光回線比較 2026｜戸建て・マンションの総額と選び方",
+    "mobile-carrier-services": "スマホ回線・格安SIM比較 2026｜容量別の選び方",
+    "ai-school-services": "AIスクール比較 2026｜料金・学習内容・支援を確認",
+    "hair-removal-services": "脱毛サービス比較 2026｜医療・サロン・家庭用の違い",
+    "credit-card-services": "クレジットカード比較 2026｜還元・年会費・利用先で選ぶ",
+    "investment-account-services": "ネット証券比較 2026｜NISA・手数料・ポイントで選ぶ",
+    "streaming-services": "動画配信サービス比較 2026｜料金・作品・同時視聴で選ぶ",
+    "fortune-consultation-services": "電話占い・相談サービス比較 2026｜料金と利用上限を確認",
+}
+
 
 def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dict[str, object]:
     """Build a small static comparison site.
@@ -600,8 +611,56 @@ def _render_service_expertise(slug: str) -> str:
     ) % (html.escape(expert["intent"]), answers, methods, terms)
 
 
+def _public_service_copy(article_body: str) -> str:
+    """Remove internal affiliate workflow labels from reader-facing tables."""
+    replacements = {
+        "アフィリエイト状況": "確認先",
+        "広告状況": "確認先",
+        "A8提携申請予定": "公式条件を確認",
+        "TGアフィリエイトに公式案件あり・申請前": "公式条件を確認",
+        "提携先を調査中": "公式条件を確認",
+        "調査候補": "公式条件を確認",
+        "通常の公式リンク": "公式条件を確認",
+    }
+    for old, new in replacements.items():
+        article_body = article_body.replace(old, new)
+    return article_body
+
+
+def _service_provider_ctas(article_body: str) -> str:
+    """Pair each provider explanation with its existing official link."""
+    links: Dict[str, str] = {}
+    for href, label in re.findall(r'<a href="([^"]+)">([^<]+)</a>', article_body):
+        key = re.sub(r"(?:公式|の公式条件を確認)$", "", html.unescape(label)).strip()
+        if key and href.startswith("http"):
+            links.setdefault(key, href)
+
+    def add_cta(match: re.Match[str]) -> str:
+        heading = html.unescape(re.sub(r"<[^>]+>", "", match.group(2))).strip()
+        candidates = [heading, heading.replace("公式", "").strip()]
+        href = next((links[name] for name in candidates if name in links), "")
+        if not href:
+            return match.group(0)
+        return (
+            '<div class="service-provider-heading">%s'
+            '<a href="%s" rel="nofollow noopener">公式条件を見る <span aria-hidden="true">→</span></a></div>'
+        ) % (match.group(0), html.escape(href, quote=True))
+
+    return re.sub(r'(<h3 id="[^"]+">)(.*?)(</h3>)', add_cta, article_body)
+
+
+def _service_evidence_note(slug: str) -> str:
+    return (
+        '<aside class="service-evidence-note"><div><small>DATA POLICY</small>'
+        '<strong>公式情報を優先</strong></div><p>確認日 %s。料金・特典・対象条件は変わるため、'
+        '各社名の横にある公式リンクで契約直前に再確認してください。数値を確認できない項目は推測で埋めません。'
+        '広告提携の有無は比較基準に含めません。</p></aside>'
+    ) % date.today().isoformat().replace("-", ".")
+
+
 def render_service_detail(page: SitePage, article_body: str) -> str:
     meta = SERVICE_PAGE_META[page.slug]
+    article_body = _service_provider_ctas(_public_service_copy(article_body))
     headings = [
         _clean_heading_text(line[3:].strip())
         for line in page.markdown.splitlines()
@@ -644,6 +703,7 @@ def render_service_detail(page: SitePage, article_body: str) -> str:
   <div class="service-check-strip">%s</div>
   <nav class="service-toc" aria-label="このページの目次"><b>このページで分かること</b>%s</nav>
   <div class="service-detail-content">%s</div>
+  %s
   <section class="service-faq"><small>BEFORE YOU APPLY</small><h2>申込前によくある確認</h2>%s</section>
   <aside class="service-editor-note">
     <div><small>EDITORIAL POLICY</small><h2>順位より契約条件を優先</h2></div>
@@ -653,7 +713,8 @@ def render_service_detail(page: SitePage, article_body: str) -> str:
 """ % (
         html.escape(meta["label"]), html.escape(page.title), html.escape(meta["lead"]),
         html.escape(_heading_id(comparison_heading), quote=True), html.escape(_heading_id(detail_heading), quote=True),
-        date.today().isoformat().replace("-", "."), _render_service_expertise(page.slug), questions, checks, toc, article_body, faq_items,
+        date.today().isoformat().replace("-", "."), _render_service_expertise(page.slug), questions, checks, toc, article_body,
+        _service_evidence_note(page.slug), faq_items,
     )
 
 
@@ -1651,7 +1712,8 @@ def render_layout(
     )
     main_body = body if slug == "index" else '<section class="page-card">%s</section>' % body
     body_class = "home" if slug == "index" else "subpage"
-    document_title = "くらメモ" if slug == "index" else "%s | くらメモ" % title
+    search_title = SERVICE_SEARCH_TITLES.get(slug, title)
+    document_title = "くらメモ" if slug == "index" else "%s | くらメモ" % search_title
     description = _meta_description(title, slug)
     page_name = "index.html" if slug == "index" else "%s.html" % slug
     canonical_url = (
@@ -2731,6 +2793,10 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
 .service-detail-content > h1 { display:none; }
 .service-detail-content h2 { margin-top:44px; }
 .service-detail-content h3 { margin-top:30px; padding:17px 20px; border-left:4px solid #2875ef; background:#f6f9ff; font-size:25px; }
+.service-provider-heading { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:12px; margin-top:30px; border-left:4px solid #2875ef; border-radius:0 14px 14px 0; background:#f6f9ff; }
+.service-provider-heading h3 { margin:0; border:0; background:transparent; }
+.service-provider-heading > a { min-height:44px; margin-right:14px; padding:11px 15px; border-radius:999px; background:#185ec9; color:#fff; font-size:12px; font-weight:900; text-decoration:none; white-space:nowrap; }
+.service-provider-heading > a:hover,.service-provider-heading > a:focus-visible { background:#0e438f; }
 .service-detail-content .table-wrap { margin:18px 0 28px; border:1px solid #d8e3f5; border-radius:18px; }
 .service-detail-content table { min-width:780px; }
 .service-detail-content td,.service-detail-content th { padding:15px; vertical-align:top; }
@@ -2739,6 +2805,11 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
 .service-editor-note h2 { margin:7px 0 0; padding:0; border:0; font-size:26px; }
 .service-editor-note h2::before { display:none; }
 .service-editor-note p { margin:0; line-height:1.9; }
+.service-evidence-note { display:grid; grid-template-columns:190px minmax(0,1fr); gap:20px; max-width:940px; margin:34px auto 0; padding:20px 24px; border:1px solid #d8e4f6; border-radius:18px; background:#f7faff; }
+.service-evidence-note small,.service-evidence-note strong { display:block; }
+.service-evidence-note small { color:#2875ef; font-size:11px; font-weight:900; letter-spacing:.12em; }
+.service-evidence-note strong { margin-top:6px; font-size:20px; }
+.service-evidence-note p { margin:0; color:#4c5b70; font-size:13px; line-height:1.75; }
 .service-faq { max-width:940px; margin:42px auto 0; padding:26px; border:1px solid #d8e3f5; border-radius:22px; background:#fff; }
 .service-faq > small { color:#2875ef; font-weight:900; letter-spacing:.12em; }
 .service-faq > h2 { margin:7px 0 18px; padding:0; border:0; font-size:28px; }
@@ -2808,6 +2879,9 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
   .service-toc a { flex:1 1 44%; text-align:center; }
   .service-detail-content h2 { margin-top:34px; font-size:27px; }
   .service-detail-content h3 { font-size:21px; }
+  .service-provider-heading { grid-template-columns:1fr; padding-bottom:13px; }
+  .service-provider-heading > a { margin:0 13px; text-align:center; }
+  .service-evidence-note { grid-template-columns:1fr; gap:8px; padding:17px; }
   .service-editor-note { grid-template-columns:1fr; gap:12px; padding:20px; }
   .brand { font-size:18px; }
   .category-hero { margin-bottom:14px; padding:17px; border-radius:22px; }
