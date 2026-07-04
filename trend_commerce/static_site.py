@@ -355,7 +355,7 @@ def _kurara_image(kind: str, title: str = "") -> str:
         "compare": "kurara-compare-v3.png",
         "recommend": "kurara-recommend-v3.png",
         "caution": "kurara-caution-v3.png",
-        "puzzled": "kurara-puzzled-v4.png",
+        "puzzled": "kurara-puzzled-v5.png",
         "smile": "kurara-x-icon-v4.png",
     }
     filename = files.get(kind, files["compare"])
@@ -373,6 +373,26 @@ def _kurara_image(kind: str, title: str = "") -> str:
 
 
 def _narrated_explanation(content: str, kind: str = "compare") -> str:
+    # A speech bubble should sound like Kurara, not like detached editorial copy.
+    # Provider explanations are a single paragraph; richer offer-card markup is
+    # left structurally intact.
+    if re.fullmatch(r"<p>.*?</p>", content.strip(), flags=re.DOTALL):
+        voice = content.strip()
+        replacements = (
+            ("比べてください。", "比べてみてね。"),
+            ("確認してください。", "確認してね。"),
+            ("検討してください。", "検討してみてね。"),
+            ("確認します。", "確認してね。"),
+            ("質問します。", "質問してみてね。"),
+            ("見ます。", "見てみよう。"),
+            ("候補です。", "候補だよ。"),
+            ("おすすめです。", "おすすめだよ。"),
+            ("できます。", "できるよ。"),
+        )
+        for formal, spoken in replacements:
+            voice = voice.replace(formal, spoken)
+        opener = "うーん、ここは迷いやすいね。" if kind == "puzzled" else "ここは私と一緒に見てみよう。"
+        content = voice.replace("<p>", "<p>%s" % opener, 1)
     return (
         '<div class="narrated-explanation narrated-%s">'
         '<div class="narrator-portrait">%s</div><div class="narrator-bubble">%s</div></div>'
@@ -2477,6 +2497,8 @@ a { color: var(--accent); }
 .brand { display:flex; flex-direction:column; line-height:1.05; font-family:var(--display); font-weight:900; text-decoration:none; color:var(--ink); letter-spacing:-.04em; font-size:20px; }
 .title-mascot { position:absolute; z-index:3; top:16px; right:18px; width:76px; height:76px; overflow:hidden; border:3px solid rgba(255,255,255,.92); border-radius:50%; background:#e8efff; box-shadow:0 8px 22px rgba(35,77,145,.16); pointer-events:none; }
 .title-mascot img { display:block; width:100%; height:100%; object-fit:cover; object-position:center 25%; }
+.hero,.category-hero,.comparison-hero,.service-detail-hero { position:relative; }
+.hero > .title-mascot,.category-hero > .title-mascot { width:104px; height:104px; top:22px; right:22px; border-width:4px; box-shadow:0 12px 30px rgba(35,77,145,.2); }
 .narrated-explanation { display:grid; grid-template-columns:74px minmax(0,1fr); align-items:end; gap:11px; margin:12px 0 18px; }
 .narrator-portrait { width:74px; height:88px; overflow:hidden; border:2px solid #d4e1f8; border-radius:18px 18px 6px 18px; background:#eef4ff; }
 .narrator-portrait img { display:block; width:100%; height:100%; object-fit:cover; object-position:center 22%; }
@@ -3039,6 +3061,7 @@ footer { border-top:1px solid var(--line); width:min(1120px, calc(100% - 32px));
 .a8-inline-copy small { color:#2563eb; font-size:11px; font-weight:800; line-height:1.5; }
 @media (max-width: 560px) {
   .title-mascot { top:10px; right:10px; width:48px; height:48px; }
+  .hero > .title-mascot,.category-hero > .title-mascot { top:12px; right:12px; width:64px; height:64px; border-width:3px; }
   .narrated-explanation { grid-template-columns:58px minmax(0,1fr); gap:8px; }
   .narrator-portrait { width:58px; height:74px; border-radius:14px 14px 5px 14px; }
   .narrator-bubble { padding:11px 12px; font-size:13px; line-height:1.65; }
