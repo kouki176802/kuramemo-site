@@ -658,7 +658,11 @@ def render_trend_evidence(page_slug: str, rows: List[Dict[str, str]]) -> str:
         '<section class="trend-evidence" id="trend-evidence">'
         '<div class="section-kicker">話題の根拠</div>'
         '<h2>どこで なぜ話題か</h2>'
-        '<p class="trend-evidence-lead">日本の現在の注目と、海外の検索急上昇を分けて確認しています。海外の話題は日本で購入できる関連商品がある場合だけ紹介します。</p>'
+        + _narrated_explanation(
+            '<p>ニュースや検索データを見ながら、どこで何が注目されたのかを確認するよ。海外発の話題は、日本で購入できる関連商品がある場合だけ紹介しているよ。</p>',
+            "trend",
+            "kurara",
+        )
         + "".join(cards)
         + "</section>"
     )
@@ -989,7 +993,21 @@ def render_category_intro(
 
 def _category_expertise(slug: str) -> str:
     if slug != "category-housework-timesaving":
-        return ""
+        guides = {
+            "category-ai-gadgets": ("AIツールとガジェットは 使う目的と対応環境から選ぶ", "月額・商用利用・対応端末・保証をそろえて比較すると、話題性だけで選ぶ失敗を減らせます。", [("AIツール", "無料枠、月額、商用利用、入力データの扱いを確認", "ai-tools-comparison.html"), ("充電まわり", "出力W数、端子、容量、持ち運びやすさを確認", "charging-power-items-comparison.html"), ("PC用品", "接続方式、対応OS、机上サイズ、保証を確認", "pc-accessories-comparison.html")]),
+            "category-beauty": ("美容用品は 肌・髪の悩みと毎日の手順から選ぶ", "人気だけで決めず、使う部位、使用頻度、刺激や香り、消耗品まで確認します。", [("スキンケア", "洗顔、保湿、UV対策の順番と肌質を確認", "skincare-basics-comparison.html"), ("話題コスメ", "色、仕上がり、容量、正規販売店を確認", "trend-cosmetics-comparison.html"), ("ヘア・身だしなみ", "セット力、手入れ、使用時間、替刃を確認", "hair-grooming-items-comparison.html")]),
+            "category-fitness": ("運動用品は 続ける場所と目的から選ぶ", "筋力、ストレッチ、運動習慣のどれを優先するか決め、床・音・収納・継続費を比べます。", [("家トレ用品", "負荷、床保護、収納、安全性を確認", "home-training-items-comparison.html"), ("運動補助食品", "成分、1回量、味、継続費を確認", "fitness-supplements-comparison.html"), ("初心者向け", "最初から道具を増やしすぎない選び方", "home-training-items.html")]),
+            "category-health": ("健康補助食品は 不足理由と成分量から選ぶ", "食事の代わりではなく補助として考え、成分の重複、1日量、注意事項を確認します。", [("ビタミン", "成分量、剤形、1日粒数を確認", "health-support-supplements-comparison.html"), ("食物繊維", "原料、溶けやすさ、摂取量を確認", "health-support-supplements-comparison.html"), ("乳酸菌", "菌の種類、保存方法、継続費を確認", "health-support-supplements-comparison.html")]),
+            "category-lifestyle-seasonal": ("季節商品は 使う場所と期間から選ぶ", "急に欲しくなる商品ほど、室内・外出・就寝の場面と保管場所を先に決めます。", [("暑さ対策", "風量、音、充電、肌触りを確認", "heat-relief-items-comparison.html"), ("季節の暮らし", "設置、洗濯、保管の手間を確認", "seasonal-living-heat.html"), ("暮らし家電", "使用期間と年間費用を確認", "living-appliances-comparison.html")]),
+            "category-disaster-preparedness": ("防災用品は 人数・日数・避難方法から選ぶ", "不安で買い足す前に、在宅備蓄と持ち出し品を分け、期限と保管場所を確認します。", [("停電", "ライト、電源、充電方法を確認", "disaster-preparedness-items-comparison.html"), ("断水", "保存水、簡易トイレ、衛生用品を確認", "disaster-preparedness-items-comparison.html"), ("持ち出し", "重さ、人数、避難先までの距離を確認", "disaster-preparedness-items-comparison.html")]),
+            "category-travel-outdoor": ("旅行用品は 移動手段・日数・荷物量から選ぶ", "便利そうな物を増やさず、容量、重量、機内持ち込み、充電、防犯を旅程に合わせて確認します。", [("荷造り", "容量、重量、キャスター、圧縮方法を確認", "travel-outdoor-items-comparison.html"), ("移動", "首への負担、収納、洗濯方法を確認", "travel-outdoor-items-comparison.html"), ("充電・防犯", "対応国、出力、取り出しやすさを確認", "travel-outdoor-items-comparison.html")]),
+        }
+        data = guides.get(slug)
+        if not data:
+            return ""
+        heading, lead, items = data
+        cards = "".join('<article><h3>%s</h3><p>%s</p><a href="%s">詳しく確認</a></article>' % (html.escape(name), html.escape(text), html.escape(href, quote=True)) for name, text, href in items)
+        return '<section class="category-expertise category-expertise-compact"><header><div class="section-kicker">専門ガイド</div><h2>%s</h2>%s</header><div class="housework-answer-grid">%s</div><footer><small>更新方針</small><p>販売状況、公式条件、レビュー母数、用途との一致を確認し、条件が変わった候補は定期的に更新します。</p></footer></section>' % (html.escape(heading), _narrated_explanation('<p>%s</p>' % html.escape(lead), "recommend", "mikeru"), cards)
     return """
 <section class="category-expertise" id="housework-guide">
   <header>
@@ -1570,7 +1588,6 @@ def render_offer_comparison_table(
             "<td>%s</td>"
             "<td>%s</td>"
             "<td>%s</td>"
-            "<td><span class=\"status-pill status-%s\">%s</span></td>"
             "</tr>"
             % (
                 index,
@@ -1578,14 +1595,12 @@ def render_offer_comparison_table(
                 html.escape(row.get("reader_problem", "")),
                 html.escape(row.get("comparison_points", "").replace("|", " / ")),
                 html.escape(stats or "リンク先で価格・レビュー確認"),
-                "active" if status == "掲載中" else "pending",
-                status,
             )
         )
     return """
 <div class="table-wrap offer-compare-wrap">
   <table class="offer-compare-table">
-    <thead><tr><th>候補</th><th>向いている悩み</th><th>見るポイント</th><th>目安データ</th><th>状態</th></tr></thead>
+    <thead><tr><th>候補</th><th>向いている悩み</th><th>見るポイント</th><th>目安データ</th></tr></thead>
     <tbody>%s</tbody>
   </table>
 </div>
@@ -1951,7 +1966,14 @@ def render_layout(
     main_body = body if slug == "index" else '<section class="page-card">%s</section>' % body
     body_class = "home" if slug == "index" else "subpage"
     category_search_titles = {
+        "category-ai-gadgets": "AIツール・ガジェットおすすめ比較 2026｜用途別の選び方",
+        "category-beauty": "美容アイテムおすすめ比較 2026｜スキンケア・コスメ・美容家電",
+        "category-fitness": "筋トレ・フィットネス用品おすすめ比較 2026｜家トレと栄養補助",
+        "category-health": "健康補助食品おすすめ比較 2026｜成分・1日量・続けやすさ",
+        "category-lifestyle-seasonal": "季節・暮らし用品おすすめ比較 2026｜暑さ・梅雨・新生活",
+        "category-disaster-preparedness": "防災グッズおすすめ比較 2026｜停電・断水・避難への備え",
         "category-housework-timesaving": "時短家電おすすめ比較 2026｜掃除・料理・洗濯をラクにする選び方",
+        "category-travel-outdoor": "旅行便利グッズおすすめ比較 2026｜荷造り・移動・充電",
     }
     search_title = SERVICE_SEARCH_TITLES.get(slug, category_search_titles.get(slug, title))
     document_title = "くらメモ" if slug == "index" else "%s | くらメモ" % search_title
@@ -2019,7 +2041,7 @@ def _meta_description(title: str, slug: str) -> str:
     if slug == "category-housework-timesaving":
         return "時短家電を掃除・料理・洗濯・衣類ケア別に比較。ロボット掃除機やキッチン家電など、共働き・一人暮らし・子育て家庭に合う選び方を、手入れ・設置・電気代・レビューから整理します"
     if slug.startswith("category-"):
-        return "%sの商品と選び方を用途・価格・レビュー・注意点から整理します" % title
+        return "%sの注目商品を用途別に比較。価格・レビュー・仕様・注意点と、くらら・ミケルの選び方ガイドから自分に合う候補を確認できます" % title
     if slug.endswith("comparison"):
         return "%sを用途・価格・レビュー・注意点から比較し自分に合う候補を選べます" % title.split("｜", 1)[0]
     if slug in SERVICE_PAGE_META:
@@ -2586,7 +2608,7 @@ a { color: var(--accent); }
 .hero > .title-mascot,.category-hero > .title-mascot { width:104px; height:104px; top:22px; right:22px; border-width:4px; box-shadow:0 12px 30px rgba(35,77,145,.2); }
 .narrated-explanation { display:grid; grid-template-columns:74px minmax(0,1fr); align-items:end; gap:11px; margin:12px 0 18px; }
 .narrator-portrait { width:74px; height:88px; overflow:hidden; border:2px solid #d4e1f8; border-radius:18px 18px 6px 18px; background:#eef4ff; }
-.narrator-portrait img { display:block; width:100%; height:100%; object-fit:cover; object-position:center 22%; }
+.narrator-portrait img { display:block; width:100%; height:100%; object-fit:cover; object-position:center 22%; transform:scaleX(-1); }
 .narrator-mikeru .narrator-portrait { border-color:#d9c99f; background:#fff9e9; }
 .narrator-mikeru .narrator-portrait img { object-position:center 38%; }
 .narrator-mikeru .narrator-bubble { border-color:#eadfbd; background:#fffdf5; }
