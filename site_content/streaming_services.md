@@ -7,7 +7,7 @@
 | [DMM TV](https://tv.dmm.com/vod/) | アニメ・エンタメ | 月額、配信作品、特典 | アニメ中心で探す人 | 公式条件を確認 |
 | [dアニメストア](https://animestore.docomo.ne.jp/animestore/tp/) | アニメ | 作品数、対応端末、支払 | アニメを集中して見る人 | 公式条件を確認 |
 | [WOWOWオンデマンド](https://wod.wowow.co.jp/) | 映画・ドラマ・スポーツ | 配信予定、放送、月額 | 特定番組を見たい人 | 公式条件を確認 |
-| [ABEMAプレミアム](https://abema.tv/about/premium) | オリジナル・番組配信 | 広告、追っかけ、DL | ABEMA番組をよく見る人 | 公式条件を確認 |
+| [ABEMAプレミアム](https://px.a8.net/svt/ejp?a8mat=4B7T8V+3SXPWY+4EKC+60WN6) | オリジナル・番組配信 | 広告、追っかけ、DL | ABEMA番組をよく見る人 | A8提携広告 |
 | [Netflix](https://www.netflix.com/jp/) | 海外作品・オリジナル | プラン、画質、同時視聴 | 独占・海外作品を重視する人 | 通常の公式リンク |
 | [U-NEXT](https://video.unext.jp/) | 映画・ドラマ・アニメ・書籍 | 月額、ポイント、追加課金 | 幅広い作品をまとめたい人 | 通常の公式リンク |
 | [Prime Video](https://www.amazon.co.jp/gp/video/storefront/) | Prime特典内作品・チャンネル | 会費、広告、追加契約 | Amazon特典も使う人 | 通常の公式リンク |
@@ -35,6 +35,8 @@
 
 ### ABEMAプレミアム
 ABEMAの番組やオリジナル作品をよく見る人向けです。広告表示、追っかけ再生、ダウンロードなど、無料版との差を自分の使い方に照らして確認します。特定作品だけが目的なら配信終了日も見ます。
+
+[ABEMAプレミアムの対象作品と利用条件を確認（広告）](https://px.a8.net/svt/ejp?a8mat=4B7T8V+3SXPWY+4EKC+60WN6)
 
 ### Netflix
 海外作品やオリジナル作品を重視する人向けです。料金プランごとの広告、画質、同時視聴、ダウンロード端末数を確認します。見たい作品が他サービスにないか契約前に検索します。
