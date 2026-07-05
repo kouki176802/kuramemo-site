@@ -42,7 +42,10 @@ def cycle_commands(
     if full_cycle:
         commands.extend([
             [py, "-m", "trend_commerce", "affiliate-program-scan"],
-            [py, "-m", "trend_commerce", "trend-screen", "--build-site"],
+            # Discord is the safe review channel. Prepare enough approved A
+            # variants for all 12 daily slots; B variants remain on experiment
+            # hold and external SNS still requires an explicit --live run.
+            [py, "-m", "trend_commerce", "trend-screen", "--max-items", "12", "--approve", "--build-site"],
             [py, "-m", "trend_commerce", "product-ops", "--mode", "daily"],
             [py, "-m", "trend_commerce", "product-expand-cache", "--target", "8", "--refresh", "--build-site"],
             [py, "-m", "trend_commerce", "social-ab-release", "--minimum-impressions", "500"],

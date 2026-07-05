@@ -17,7 +17,7 @@ class SchedulerTest(unittest.TestCase):
     def test_full_cycle_connects_business_departments(self):
         commands = [" ".join(command) for command in scheduler.cycle_commands(True)]
         joined = "\n".join(commands)
-        self.assertIn("trend-screen --build-site", joined)
+        self.assertIn("trend-screen --max-items 12 --approve --build-site", joined)
         self.assertIn("affiliate-program-scan", joined)
         self.assertIn("product-ops --mode daily", joined)
         self.assertIn("product-expand-cache --target 8", joined)

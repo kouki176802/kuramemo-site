@@ -3,7 +3,8 @@ import unittest
 from trend_commerce.rakuten import RakutenProduct, parse_items
 from trend_commerce.trend_screening import (
     TrendObservation, TrendOpportunity, TrendRule, _deduplicate_opportunities,
-    _market_label, _news_terms_match_rule, _ranking_label, parse_google_trends,
+    _blocked_observation, _market_label, _news_terms_match_rule,
+    _observation_rule_excluded, _ranking_label, parse_google_trends,
 )
 
 
@@ -80,6 +81,17 @@ class TrendScreeningTest(unittest.TestCase):
         rule = TrendRule("pc", "AI", "pc", "作業", "人", ["PC"], ["マウス"], "1", "PC")
         self.assertFalse(_news_terms_match_rule("space designの新商品", rule))
         self.assertTrue(_news_terms_match_rule("pc 作業向け新商品", rule))
+
+    def test_scraped_news_source_is_blocked(self):
+        item = TrendObservation(
+            "spam", "Google News", "JP", "日本", "防災グッズ新商品", "",
+            "防災グッズ新商品", "https://example.invalid", "richardajkeys.com", "",
+        )
+        self.assertTrue(_blocked_observation(item))
+
+    def test_unrelated_toy_and_vehicle_matches_are_excluded(self):
+        self.assertTrue(_observation_rule_excluded("木製の知育玩具 ダンベルベル", "fitness"))
+        self.assertTrue(_observation_rule_excluded("電動スクーターの充電器", "charging"))
 
 
 if __name__ == "__main__":

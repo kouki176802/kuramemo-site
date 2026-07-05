@@ -34,6 +34,12 @@ BLOCKED_NEWS_TERMS = {
     "殺害", "死亡", "逮捕", "虐待", "性被害", "被害者", "被疑者", "容疑者",
     "がん公表", "闘病", "訃報", "自殺", "暴行", "誘拐",
 }
+BLOCKED_NEWS_SOURCES = {
+    # Google News occasionally surfaces scraped or unrelated mirror domains.
+    # Do not turn those into site claims or social posts even when a keyword
+    # happens to match a product rule.
+    "richardajkeyscom",
+}
 AMBIGUOUS_NEWS_PRODUCT_TERMS = {
     # 「チューブ入り食品」のような一般語を家トレ商品として拾わない。
     "fitness": {"チューブ"},
@@ -943,6 +949,8 @@ def _news_terms_match_rule(normalized_title: str, rule: TrendRule) -> bool:
 def _observation_rule_excluded(text: str, rule_id: str) -> bool:
     exclusions = {
         "wellness": ["プロテイン", "protein", "クレアチン", "creatine", "eaa", "bcaa"],
+        "fitness": ["知育玩具", "子ども向け玩具", "おもちゃ"],
+        "charging": ["電動スクーター", "原付", "電動バイク"],
         "housework": ["布団乾燥機"] if "衣類乾燥" in text and "布団乾燥機" not in text else [],
         "heat": ["暖房", "ヒーター"],
     }
@@ -1001,7 +1009,11 @@ def _ranking_label(product: RakutenProduct, rule: TrendRule) -> str:
 
 def _blocked_observation(item: TrendObservation) -> bool:
     text = "%s %s" % (item.topic, item.news_title)
-    return any(term in text for term in BLOCKED_NEWS_TERMS)
+    source = re.sub(r"[^a-z0-9]", "", (item.news_source or "").lower())
+    return (
+        any(term in text for term in BLOCKED_NEWS_TERMS)
+        or any(blocked in source for blocked in BLOCKED_NEWS_SOURCES)
+    )
 
 
 def _person_note(item: TrendObservation) -> str:
