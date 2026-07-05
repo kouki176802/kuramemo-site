@@ -762,6 +762,34 @@ def _render_service_expertise(slug: str) -> str:
 
 def _public_service_copy(article_body: str) -> str:
     """Remove internal affiliate workflow labels from reader-facing tables."""
+    def drop_status_column(table_match: re.Match[str]) -> str:
+        table = table_match.group(0)
+        header = re.search(r"<thead>.*?<tr>(.*?)</tr>.*?</thead>", table, flags=re.DOTALL)
+        if not header:
+            return table
+        headers = re.findall(r"<th\b[^>]*>.*?</th>", header.group(1), flags=re.DOTALL)
+        removable = {
+            index for index, cell in enumerate(headers)
+            if re.sub(r"<[^>]+>", "", html.unescape(cell)).strip()
+            in {"確認先", "広告状況", "アフィリエイト状況"}
+        }
+        if not removable:
+            return table
+
+        def trim_row(row_match: re.Match[str]) -> str:
+            row = row_match.group(1)
+            cells = re.findall(r"<(?:th|td)\b[^>]*>.*?</(?:th|td)>", row, flags=re.DOTALL)
+            if not cells:
+                return row_match.group(0)
+            kept = [cell for index, cell in enumerate(cells) if index not in removable]
+            return "<tr>" + "".join(kept) + "</tr>"
+
+        return re.sub(r"<tr>(.*?)</tr>", trim_row, table, flags=re.DOTALL)
+
+    # Affiliate availability is already disclosed by each labelled link and
+    # banner. Keeping a separate status column makes the table wider without
+    # helping the reader compare the services.
+    article_body = re.sub(r"<table>.*?</table>", drop_status_column, article_body, flags=re.DOTALL)
     replacements = {
         "アフィリエイト状況": "確認先",
         "広告状況": "確認先",

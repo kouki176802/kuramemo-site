@@ -127,6 +127,8 @@ class StaticSiteTest(unittest.TestCase):
                 self.assertIn("SEARCH INTENT", service_html, service_page.name)
                 self.assertIn("このページの比較基準", service_html, service_page.name)
                 self.assertIn("比較前に知っておきたい用語", service_html, service_page.name)
+                self.assertNotIn("<th>確認先</th>", service_html, service_page.name)
+                self.assertNotIn("<th>広告状況</th>", service_html, service_page.name)
             self.assertIn("楽天モバイル公式", mobile_services.read_text(encoding="utf-8"))
             investment_html = investment_services.read_text(encoding="utf-8")
             self.assertNotIn("アフィリエイト状況", investment_html)
