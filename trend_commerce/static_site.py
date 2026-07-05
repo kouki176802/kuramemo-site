@@ -401,11 +401,10 @@ def _narrated_explanation(content: str, kind: str = "compare", speaker: str = "k
         )
         for formal, spoken in replacements:
             voice = voice.replace(formal, spoken)
-        if speaker == "mikeru":
-            opener = "ここはミケルが確認するね。"
-        else:
-            opener = "うーん、ここは迷いやすいね。" if kind == "puzzled" else "ここは私と一緒に見てみよう。"
-        content = voice.replace("<p>", "<p>%s" % opener, 1)
+        # The portrait already identifies the speaker. Repeating a stock opener
+        # on every card makes the guidance feel mechanical, so begin directly
+        # with the useful, provider-specific explanation.
+        content = voice
     portrait = _mikeru_image("recommend" if kind == "recommend" else "check") if speaker == "mikeru" else _kurara_image(kind)
     return (
         '<div class="narrated-explanation narrated-%s narrator-%s">'
