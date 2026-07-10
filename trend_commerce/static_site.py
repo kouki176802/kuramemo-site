@@ -959,6 +959,11 @@ def render_category_intro(
             "charging-power-items-comparison",
             "pc-accessories-comparison",
         ],
+        "食・宅食": [
+            "meal-delivery-comparison",
+            "kitchen-appliances-comparison",
+            "fitness-supplements-comparison",
+        ],
     }
     preferred = category_order.get(page.title, [])
     matches.sort(
@@ -977,7 +982,7 @@ def render_category_intro(
   <small>見る軸: 学習内容 / 料金 / 質問対応 / 解約条件</small>
 </a>
 """
-    product_cards = render_food_product_shelf() if page.slug == "category-food" else render_category_product_shelf(page.slug, matches, offers, offer_assets, trend_rows)
+    product_cards = render_food_product_shelf(offer_assets) if page.slug == "category-food" else render_category_product_shelf(page.slug, matches, offers, offer_assets, trend_rows)
     article_cards = render_category_articles(page, pages)
     profile = _category_profile(page.title)
     expertise = _category_expertise(page.slug)
@@ -1028,7 +1033,7 @@ def _category_expertise(slug: str) -> str:
             "category-beauty": ("美容用品は 肌・髪の悩みと毎日の手順から選ぶ", "人気だけで決めず、使う部位、使用頻度、刺激や香り、消耗品まで確認します。", [("スキンケア", "洗顔、保湿、UV対策の順番と肌質を確認", "skincare-basics-comparison.html"), ("話題コスメ", "色、仕上がり、容量、正規販売店を確認", "trend-cosmetics-comparison.html"), ("ヘア・身だしなみ", "セット力、手入れ、使用時間、替刃を確認", "hair-grooming-items-comparison.html")]),
             "category-fitness": ("運動用品は 続ける場所と目的から選ぶ", "筋力、ストレッチ、運動習慣のどれを優先するか決め、床・音・収納・継続費を比べます。", [("家トレ用品", "負荷、床保護、収納、安全性を確認", "home-training-items-comparison.html"), ("運動補助食品", "成分、1回量、味、継続費を確認", "fitness-supplements-comparison.html"), ("初心者向け", "最初から道具を増やしすぎない選び方", "home-training-items.html")]),
             "category-health": ("健康補助食品は 不足理由と成分量から選ぶ", "食事の代わりではなく補助として考え、成分の重複、1日量、注意事項を確認します。", [("ビタミン", "成分量、剤形、1日粒数を確認", "health-support-supplements-comparison.html"), ("食物繊維", "原料、溶けやすさ、摂取量を確認", "health-support-supplements-comparison.html"), ("乳酸菌", "菌の種類、保存方法、継続費を確認", "health-support-supplements-comparison.html")]),
-            "category-food": ("宅食と時短ごはんは 1食総額と続けやすさで選ぶ", "冷凍弁当、宅配食、ミールキット、調理家電は、食べた後の満足感だけでなく、受け取り、保存、片付け、停止条件まで見ます。", [("冷凍弁当", "1食総額、送料、冷凍庫容量、スキップ条件を確認", "category-food.html#category-products"), ("キッチン家電", "調理時間、洗う部品、置き場所、電気代を確認", "kitchen-appliances-comparison.html"), ("運動中の食事", "たんぱく質量、脂質、定期購入、配送頻度を確認", "fitness-supplements-comparison.html")]),
+            "category-food": ("宅食と時短ごはんは 1食総額と続けやすさで選ぶ", "冷凍弁当、宅配食、ミールキット、調理家電は、食べた後の満足感だけでなく、受け取り、保存、片付け、停止条件まで見ます。", [("冷凍弁当", "1食総額、送料、冷凍庫容量、スキップ条件を確認", "meal-delivery-comparison.html"), ("キッチン家電", "調理時間、洗う部品、置き場所、電気代を確認", "kitchen-appliances-comparison.html"), ("運動中の食事", "たんぱく質量、脂質、定期購入、配送頻度を確認", "fitness-supplements-comparison.html")]),
             "category-lifestyle-seasonal": ("季節商品は 使う場所と期間から選ぶ", "急に欲しくなる商品ほど、室内・外出・就寝の場面と保管場所を先に決めます。", [("暑さ対策", "風量、音、充電、肌触りを確認", "heat-relief-items-comparison.html"), ("季節の暮らし", "設置、洗濯、保管の手間を確認", "seasonal-living-heat.html"), ("暮らし家電", "使用期間と年間費用を確認", "living-appliances-comparison.html")]),
             "category-disaster-preparedness": ("防災用品は 人数・日数・避難方法から選ぶ", "不安で買い足す前に、在宅備蓄と持ち出し品を分け、期限と保管場所を確認します。", [("停電", "ライト、電源、充電方法を確認", "disaster-preparedness-items-comparison.html"), ("断水", "保存水、簡易トイレ、衛生用品を確認", "disaster-preparedness-items-comparison.html"), ("持ち出し", "重さ、人数、避難先までの距離を確認", "disaster-preparedness-items-comparison.html")]),
             "category-travel-outdoor": ("旅行用品は 移動手段・日数・荷物量から選ぶ", "便利そうな物を増やさず、容量、重量、機内持ち込み、充電、防犯を旅程に合わせて確認します。", [("荷造り", "容量、重量、キャスター、圧縮方法を確認", "travel-outdoor-items-comparison.html"), ("移動", "首への負担、収納、洗濯方法を確認", "travel-outdoor-items-comparison.html"), ("充電・防犯", "対応国、出力、取り出しやすさを確認", "travel-outdoor-items-comparison.html")]),
@@ -1164,7 +1169,8 @@ def render_category_product_shelf(
 """ % "\n".join(cards)
 
 
-def render_food_product_shelf() -> str:
+def render_food_product_shelf(offer_assets: Dict[str, Dict[str, str]] | None = None) -> str:
+    offer_assets = offer_assets or {}
     food_keys = ["meal", "fitness-food"]
     cards: List[str] = []
     for index, key in enumerate(food_keys, 1):
@@ -1197,21 +1203,21 @@ def render_food_product_shelf() -> str:
         ))
     cards.append("""
 <article class="category-product-card category-service-product">
-  <a class="category-product-image" href="kitchen-appliances-comparison.html">%s</a>
+  <a class="category-product-image" href="meal-delivery-comparison.html">%s</a>
   <div>
     <div class="category-product-signal signal-reviews"><b>GUIDE</b><small>内部比較</small></div>
-    <span>No.03 / キッチン家電</span>
-    <h3>調理の手間を減らす家電</h3>
-    <p class="category-product-intro">宅食を固定費にする前に、電子レンジ・炊飯器・電気圧力鍋・ミキサーで解決できるかを見ます。</p>
+    <span>No.03 / 専門比較</span>
+    <h3>宅食・冷凍弁当の選び方</h3>
+    <p class="category-product-intro">宅食を固定費にする前に、冷凍弁当・ミールキット・調理家電のどれが合うかを見ます。</p>
     <div class="category-product-reasons">
-      <p><b>向いている人</b>自炊は続けたいが、下ごしらえや温めを短縮したい人</p>
-      <p><b>購入前の確認</b>容量、洗う部品、置き場所、電気代</p>
-      <p><b>見る理由</b>宅食より安く済むケースもあるため、代替手段として比較します。</p>
+      <p><b>向いている人</b>料理したくない日をラクにしたいが、何を契約すべきか迷っている人</p>
+      <p><b>購入前の確認</b>1食総額、送料、冷凍庫容量、スキップ条件</p>
+      <p><b>見る理由</b>食は継続費になりやすいため、申込み前に代替手段まで比較します。</p>
     </div>
-    <div class="category-product-actions"><a class="button" href="kitchen-appliances-comparison.html">キッチン家電を見る</a></div>
+    <div class="category-product-actions"><a class="button" href="meal-delivery-comparison.html">宅食比較を見る</a></div>
   </div>
 </article>
-""" % _home_figure({}, "", "キッチン家電"))
+""" % _home_figure(offer_assets, "electric_pressure_cooker_research", "宅食・時短ごはん"))
     return """
 <section class="category-product-shelf" id="category-products">
   <div class="section-kicker">食の注目候補</div>
@@ -2145,6 +2151,8 @@ def _meta_description(title: str, slug: str) -> str:
         return "時短家電を掃除・料理・洗濯・衣類ケア別に比較。ロボット掃除機やキッチン家電など、共働き・一人暮らし・子育て家庭に合う選び方を、手入れ・設置・電気代・レビューから整理します"
     if slug == "category-food":
         return "宅食・冷凍弁当・調理補助・キッチン家電を、1食あたりの総額、冷凍庫の空き、定期購入条件、続けやすさで比較する食の専門カテゴリです"
+    if slug == "meal-delivery-comparison":
+        return "宅食・冷凍弁当・ミールキット・調理家電を、1食総額、送料、冷凍庫容量、配送頻度、スキップ条件から比較。忙しい日の時短ごはんを固定費にする前に確認できます"
     if slug.startswith("category-"):
         return "%sの注目商品を用途別に比較。価格・レビュー・仕様・注意点と、くらら・ミケルの選び方ガイドから自分に合う候補を確認できます" % title
     if slug.endswith("comparison"):
@@ -2197,6 +2205,24 @@ def _schema_json(title: str, description: str, canonical_url: str, slug: str) ->
                 {"@type": "ListItem", "position": 1, "name": "家事・時短家電", "url": "https://kuramemo-mk.com/housework-timesaving-items-comparison.html"},
                 {"@type": "ListItem", "position": 2, "name": "キッチン家電", "url": "https://kuramemo-mk.com/kitchen-appliances-comparison.html"},
                 {"@type": "ListItem", "position": 3, "name": "暮らし家電", "url": "https://kuramemo-mk.com/living-appliances-comparison.html"},
+            ],
+        })
+    if slug == "category-food":
+        graph.append({
+            "@type": "FAQPage",
+            "mainEntity": [
+                {"@type": "Question", "name": "宅食と冷凍弁当は何を見て選ぶ？", "acceptedAnswer": {"@type": "Answer", "text": "1食あたりの総額、送料、冷凍庫に入る量、配送頻度、スキップや停止条件を先に確認します。味や見た目だけでなく、生活の中で続けられるかを重視します。"}},
+                {"@type": "Question", "name": "一人暮らしで宅食は向いている？", "acceptedAnswer": {"@type": "Answer", "text": "帰宅後の調理や片付けが負担になっている人には候補になります。ただし冷凍庫の空き、受け取りやすさ、コンビニや自炊より高くなりすぎないかを確認します。"}},
+                {"@type": "Question", "name": "宅食を始める前に確認することは？", "acceptedAnswer": {"@type": "Answer", "text": "初回価格だけでなく通常価格、送料、最低購入回数、スキップ方法、解約条件、アレルゲン表示を公式ページで確認します。"}},
+            ],
+        })
+        graph.append({
+            "@type": "ItemList",
+            "name": "食・宅食の専門比較ガイド",
+            "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": "宅食・冷凍弁当", "url": "https://kuramemo-mk.com/meal-delivery-comparison.html"},
+                {"@type": "ListItem", "position": 2, "name": "キッチン家電", "url": "https://kuramemo-mk.com/kitchen-appliances-comparison.html"},
+                {"@type": "ListItem", "position": 3, "name": "フィットネス向け食事", "url": "https://kuramemo-mk.com/fitness-supplements-comparison.html"},
             ],
         })
     if slug in SERVICE_PAGE_META:
@@ -2282,6 +2308,7 @@ def _active_nav_slug(slug: str) -> str:
         "housework-timesaving-items-comparison": "category-housework-timesaving",
         "kitchen-appliances-comparison": "category-housework-timesaving",
         "living-appliances-comparison": "category-housework-timesaving",
+        "meal-delivery-comparison": "category-food",
         "travel-outdoor-items-comparison": "category-travel-outdoor",
         "ai-school-services": "category-services",
         "mobile-carrier-services": "category-services",
