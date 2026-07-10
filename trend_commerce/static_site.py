@@ -1528,6 +1528,18 @@ def render_comparison_intro(
     lead_groups = "・".join(groups[:4]) if groups else "候補商品"
     title_main, title_sub = _split_comparison_title(page.title)
     previews = "\n".join(_comparison_hero_preview(row, offer_assets or {}) for row in rows[:3])
+    lead_text = "%sを、%sでチェック。ランキングの勢いより、使う場面と失敗しやすい条件を先に整理します。" % (lead_groups, top_points)
+    panel_title = "すぐ候補を見る"
+    panel_cta = "商品リンクへ"
+    if page.slug == "meal-delivery-comparison":
+        lead_text = "冷凍弁当、宅配食、ミールキット、キッチン家電を、1食総額・送料・冷凍庫容量・スキップ条件で比較します。忙しい日の食事をラクにする前に、固定費として続けられるかを先に整理します。"
+        panel_title = "宅食の候補を見る"
+        panel_cta = "宅食候補へ"
+        previews = """
+<a href="#affiliate-links"><span>冷凍弁当</span><small>総額 / 送料 / 停止条件</small></a>
+<a href="#comparison-axis"><span>ミールキット</span><small>調理時間 / 配送エリア</small></a>
+<a href="#comparison-axis"><span>キッチン家電</span><small>固定費を増やさない代替</small></a>
+"""
     return """
 <section class="comparison-hero">
   <div class="title-mascot">%s</div>
@@ -1535,7 +1547,7 @@ def render_comparison_intro(
     <div class="section-kicker">選び方ガイド / %s</div>
     <h1>%s</h1>
     %s
-    <p>%sを、%sでチェック。ランキングの勢いより、使う場面と失敗しやすい条件を先に整理します。</p>
+    <p>%s</p>
     <div class="comparison-hero-actions">
       <a class="button button-primary" href="#affiliate-links">商品候補を見る</a>
       <a class="button button-secondary" href="#comparison-axis">見る軸を確認</a>
@@ -1543,9 +1555,9 @@ def render_comparison_intro(
   </div>
   <aside class="comparison-hero-panel comparison-hero-products" aria-label="すぐ見られる商品候補">
     <p class="comparison-panel-label">商品へ進む</p>
-    <strong>すぐ候補を見る</strong>
+    <strong>%s</strong>
     <div class="comparison-preview-list">%s</div>
-    <a class="button button-secondary" href="#affiliate-links">商品リンクへ</a>
+    <a class="button button-secondary" href="#affiliate-links">%s</a>
   </aside>
 </section>
 """ % (
@@ -1553,9 +1565,10 @@ def render_comparison_intro(
         html.escape(category),
         _inline(title_main),
         '<p class="comparison-title-sub">%s</p>' % _inline(title_sub) if title_sub else "",
-        html.escape(lead_groups),
-        html.escape(top_points),
+        html.escape(lead_text),
+        html.escape(panel_title),
         previews,
+        html.escape(panel_cta),
     )
 
 
