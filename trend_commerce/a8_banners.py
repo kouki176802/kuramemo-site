@@ -91,6 +91,8 @@ def banner_keys_for_slug(slug: str) -> list[str]:
         return ["ulike", "beauty-serum", "hair-care"]
     if "fitness" in slug or "training" in slug:
         return ["ultora", "naturecan", "kensui", "expa", "fitness-food", "body-care"]
+    if "food" in slug or "meal" in slug:
+        return ["meal", "fitness-food"]
     if "health" in slug:
         return ["health-test"]
     if slug == "category-services":
