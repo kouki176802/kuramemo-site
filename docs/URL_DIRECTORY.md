@@ -88,6 +88,21 @@
 
 ## 優先度B: サイト公開後
 
+### Search Console URL検査
+
+- トップ: https://kuramemo-mk.com/
+- サイトマップ: https://kuramemo-mk.com/sitemap.xml
+- 食・宅食カテゴリ: https://kuramemo-mk.com/category-food.html
+- 宅食・冷凍弁当比較: https://kuramemo-mk.com/meal-delivery-comparison.html
+- 家事・時短カテゴリ: https://kuramemo-mk.com/category-housework-timesaving.html
+- 光回線比較: https://kuramemo-mk.com/internet-line-services.html
+
+用途:
+
+- Search ConsoleのURL検査
+- ASP登録時の媒体URL
+- SNSプロフィールや固定投稿のリンク確認
+
 ### Amazonアソシエイト
 
 - 公式: https://affiliate.amazon.co.jp/

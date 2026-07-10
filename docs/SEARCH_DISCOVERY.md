@@ -43,6 +43,25 @@
 
 ローカル表示中は誤って検索登録されないよう noindex と robots.txt の拒否を維持する。
 
+## 2026-07-10 追加でURL検査するページ
+
+専門性を強めたページから優先して、Search ConsoleのURL検査で登録リクエストする。
+
+1. `https://kuramemo-mk.com/category-food.html`
+   - 狙い: 食・宅食カテゴリの入口
+   - 検索意図: 宅食、冷凍弁当、時短ごはん、食事管理
+2. `https://kuramemo-mk.com/meal-delivery-comparison.html`
+   - 狙い: 宅食・冷凍弁当の専門比較ページ
+   - 検索意図: 宅食 おすすめ、冷凍弁当 比較、一人暮らし 宅食、時短ごはん
+3. `https://kuramemo-mk.com/category-housework-timesaving.html`
+   - 狙い: 家事・時短の専門カテゴリ
+   - 検索意図: 時短家電、家事ラク、共働き 家電、一人暮らし 家電
+4. `https://kuramemo-mk.com/internet-line-services.html`
+   - 狙い: サービス系の専門比較ページ
+   - 検索意図: 光回線 比較、インターネット回線 おすすめ、戸建て 回線、マンション 回線
+
+URL検査の直後に検索順位が出るわけではない。まずはクロールされる状態にし、2〜4週間はSearch Consoleの「ページ」「検索パフォーマンス」で表示回数の有無を見る。
+
 ## 公式資料
 
 - Google 検索セントラル「有用で信頼性の高いユーザー第一のコンテンツ」
