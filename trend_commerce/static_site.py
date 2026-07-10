@@ -401,6 +401,9 @@ def _narrated_explanation(content: str, kind: str = "compare", speaker: str = "k
         )
         for formal, spoken in replacements:
             voice = voice.replace(formal, spoken)
+        voice = re.sub(r"<p>\s*ここは(?:私と一緒に見てみよう|ミケルが確認するね)[。．]\s*", "<p>", voice)
+        voice = re.sub(r"<p>\s*ここは(?:私|ミケル)と確認するね[。．]\s*", "<p>", voice)
+        voice = re.sub(r"<p>\s*ここは(?:私|ミケル)が確認するね[。．]\s*", "<p>", voice)
         # The portrait already identifies the speaker. Repeating a stock opener
         # on every card makes the guidance feel mechanical, so begin directly
         # with the useful, provider-specific explanation.
