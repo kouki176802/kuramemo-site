@@ -34,6 +34,7 @@ from .social_optimization import (
 )
 from .static_site import build_static_site
 from .trend_screening import enqueue_latest_opportunities, screen_trend_opportunities
+from .video_content import write_video_content_pack
 
 
 def _init() -> None:
@@ -461,6 +462,17 @@ def _trend_enqueue_latest(args) -> None:
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+def _video_pack(args) -> None:
+    path = write_video_content_pack(
+        args.campaign_id,
+        Path(args.output),
+        news_context=args.news_context or "",
+        angle=args.angle or "",
+        campaigns_path=Path(args.campaigns),
+    )
+    print(json.dumps({"written": str(path)}, ensure_ascii=False, indent=2))
+
+
 def _wordpress_check() -> None:
     print(json.dumps(WordPressPublisher().check_connection(), ensure_ascii=False, indent=2))
 
@@ -670,6 +682,12 @@ def build_parser() -> argparse.ArgumentParser:
     trend_cached = sub.add_parser("trend-enqueue-latest", help="直近48時間の検証済み話題からSNS候補を生成")
     trend_cached.add_argument("--max-items", type=int, default=6)
     trend_cached.add_argument("--approve", action="store_true")
+    video_pack = sub.add_parser("video-pack", help="手動動画化用の台本・ナレーション・画像プロンプトを生成")
+    video_pack.add_argument("--campaign-id", required=True)
+    video_pack.add_argument("--campaigns", default="data/video_campaigns.csv")
+    video_pack.add_argument("--output", default="output/video/content_pack.md")
+    video_pack.add_argument("--news-context", default="", help="例: 引っ越しシーズン / 通信障害 / 固定費見直し")
+    video_pack.add_argument("--angle", default="", help="例: 引っ越し / 在宅勤務 / 通信費見直し")
     sub.add_parser("wordpress-check", help="WordPress REST APIの接続を確認")
     wordpress_draft = sub.add_parser("wordpress-draft", help="Markdown記事をWordPressへ下書き投稿")
     wordpress_draft.add_argument("--file", required=True)
@@ -725,6 +743,7 @@ def main() -> None:
         "affiliate-program-scan": lambda: _affiliate_program_scan(),
         "trend-screen": lambda: _trend_screen(args),
         "trend-enqueue-latest": lambda: _trend_enqueue_latest(args),
+        "video-pack": lambda: _video_pack(args),
         "wordpress-check": lambda: _wordpress_check(),
         "wordpress-draft": lambda: _wordpress_draft(args),
         "wordpress-sync": lambda: _wordpress_sync(args),
