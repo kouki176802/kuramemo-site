@@ -4,7 +4,7 @@ from trend_commerce.rakuten import RakutenProduct, parse_items
 from trend_commerce.trend_screening import (
     TrendObservation, TrendOpportunity, TrendRule, _deduplicate_opportunities,
     _blocked_observation, _market_label, _news_terms_match_rule,
-    _observation_rule_excluded, _ranking_label, parse_google_trends,
+    _observation_rule_excluded, _ranking_label, load_trend_rules, parse_google_trends,
 )
 
 
@@ -92,6 +92,12 @@ class TrendScreeningTest(unittest.TestCase):
     def test_unrelated_toy_and_vehicle_matches_are_excluded(self):
         self.assertTrue(_observation_rule_excluded("木製の知育玩具 ダンベルベル", "fitness"))
         self.assertTrue(_observation_rule_excluded("電動スクーターの充電器", "charging"))
+
+    def test_news_reactive_rules_include_earthquake_and_worldcup(self):
+        rules = {rule.rule_id: rule for rule in load_trend_rules()}
+        self.assertIn("worldcup", rules)
+        self.assertTrue(_news_terms_match_rule("W杯 日本代表 準決勝の観戦準備", rules["worldcup"]))
+        self.assertTrue(_news_terms_match_rule("震度5の地震を受け防災グッズを点検", rules["disaster"]))
 
 
 if __name__ == "__main__":
