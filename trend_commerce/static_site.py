@@ -289,6 +289,10 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
         )
         out = target / ("%s.html" % page.slug if page.slug != "index" else "index.html")
         out.write_text(html_doc, encoding="utf-8")
+        if page.slug != "index":
+            pretty_dir = target / page.slug
+            pretty_dir.mkdir(parents=True, exist_ok=True)
+            (pretty_dir / "index.html").write_text(html_doc, encoding="utf-8")
         if page.slug in SERVICE_PAGE_META:
             service_quality[page.slug] = _service_on_page_score(html_doc)
         rendered.append(str(out))
