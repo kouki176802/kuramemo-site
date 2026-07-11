@@ -28,7 +28,10 @@ from .social import (
     import_manual_social_posts, mark_post_published, reject_post, reschedule_post, retry_post, set_media_urls,
     send_discord_ready_messages,
 )
-from .social_optimization import add_funnel_metric, release_b_variants, write_learning_report
+from .social_optimization import (
+    add_funnel_metric, release_b_variants, write_learning_report,
+    x_post_quality_checks, x_post_quality_score,
+)
 from .static_site import build_static_site
 from .trend_screening import enqueue_latest_opportunities, screen_trend_opportunities
 
@@ -151,6 +154,36 @@ def _social_queue(args) -> None:
     initialize(settings.database_path)
     rows = list_queue(settings, platform=args.platform or "", status=args.status or "")
     print(json.dumps(rows, ensure_ascii=False, indent=2))
+
+
+def _social_lint(args) -> None:
+    settings = load_settings()
+    initialize(settings.database_path)
+    rows = list_queue(settings, platform=args.platform or "x", status=args.status or "")
+    if not args.status:
+        rows = [
+            row for row in rows
+            if row.get("status") in {"queued", "ready", "media_required", "experiment_hold", "failed"}
+        ]
+    result = []
+    for row in rows:
+        text = str(row.get("post_text") or "")
+        checks = x_post_quality_checks(text)
+        result.append({
+            "id": row["id"],
+            "platform": row["platform"],
+            "status": row["status"],
+            "score": x_post_quality_score(text),
+            "missing": [name for name, ok in checks.items() if not ok],
+            "preview": text.replace("\n", " ")[:120],
+        })
+    if args.file:
+        path = Path(args.file)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+        print("SNS投稿品質チェックを書き出しました: %s" % path)
+    else:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
 def _social_approve(args) -> None:
@@ -489,6 +522,11 @@ def build_parser() -> argparse.ArgumentParser:
     queue.add_argument("--platform", choices=["x", "threads", "instagram"])
     queue.add_argument("--status")
 
+    lint = sub.add_parser("social-lint", help="X投稿のフック・話題根拠・判断軸・導線を点数化")
+    lint.add_argument("--platform", choices=["x", "threads", "instagram"], default="x")
+    lint.add_argument("--status", default="")
+    lint.add_argument("--file", default="")
+
     approve = sub.add_parser("social-approve", help="SNS投稿を承認")
     approve_group = approve.add_mutually_exclusive_group(required=True)
     approve_group.add_argument("--id", type=int, action="append")
@@ -659,6 +697,7 @@ def main() -> None:
         "import-conversions": lambda: _import_conversions(args),
         "add-metric": lambda: _add_metric(args),
         "social-queue": lambda: _social_queue(args),
+        "social-lint": lambda: _social_lint(args),
         "social-approve": lambda: _social_approve(args),
         "social-reject": lambda: _social_reject(args),
         "social-retry": lambda: _social_retry(args),

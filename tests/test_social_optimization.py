@@ -6,6 +6,7 @@ from trend_commerce.database import initialize, transaction
 from trend_commerce.settings import Settings
 from trend_commerce.social_optimization import (
     add_funnel_metric, information_gap_hooks, learning_rows, register_experiment, release_b_variants,
+    x_post_quality_checks, x_post_quality_score,
 )
 
 
@@ -27,6 +28,19 @@ class SocialOptimizationTest(unittest.TestCase):
         self.assertIn("韓国", hooks[1]["text"])
         self.assertNotIn("注目で広がる", hooks[1]["text"])
         self.assertTrue(all(hook["promise"] == "現地メディアで紹介が増加" for hook in hooks))
+
+    def test_x_quality_checks_require_hook_source_axis_and_action(self):
+        strong = (
+            "韓国で伸びてるグラススキン、なぜ今見られてる？\n\n"
+            "SNSで紹介が増えている背景があります。日本で選ぶなら、価格より先に肌質・成分・返品条件を確認。\n\n"
+            "比較はプロフィールのくらメモへ"
+        )
+        checks = x_post_quality_checks(strong)
+        self.assertTrue(all(checks.values()))
+        self.assertEqual(100, x_post_quality_score(strong))
+
+        weak = "この商品は人気です。おすすめです。"
+        self.assertLess(x_post_quality_score(weak), 50)
 
     def test_learning_waits_for_sample_then_selects_winner(self):
         with tempfile.TemporaryDirectory() as tmp:

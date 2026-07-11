@@ -8,6 +8,16 @@ from .database import connect, initialize, transaction
 from .settings import Settings
 
 
+X_IMPRESSION_FACTORS = [
+    "冒頭1行で、誰のどんな悩みに関係する話かを見せる",
+    "どこで話題か、なぜ今見られているかを本文内で回収する",
+    "価格やおすすめだけでなく、買う前に見る軸を1つ入れる",
+    "URLなし投稿でも固定ポストやプロフィールへ自然に移動する理由を作る",
+    "同じ商品でも、理由・失敗回避・向く人・比較軸でフックを変える",
+    "断定しすぎず、読者が自分の状況に当てはめて考えられる余白を残す",
+]
+
+
 def information_gap_hooks(market_label: str, topic: str, reason: str) -> List[Dict[str, str]]:
     """Create honest hook variants whose answer is present in the post body."""
     market = market_label.strip("【】") or "いま注目"
@@ -24,16 +34,48 @@ def information_gap_hooks(market_label: str, topic: str, reason: str) -> List[Di
         {
             "variant": "A",
             "hook_type": "reason_question",
-            "text": "【%s】%s なぜ注目？" % (market, subject),
+            "text": "【%s】%s、なぜ今見られてる？" % (market, subject),
             "promise": reason_text,
         },
         {
             "variant": "B",
             "hook_type": "audience_gap",
-            "text": "%sの「%s」 日本で選ぶなら何を見る？" % (place, subject),
+            "text": "%sの「%s」 日本で選ぶなら先に見るべきこと" % (place, subject),
             "promise": reason_text,
         },
     ]
+
+
+def x_post_quality_checks(text: str) -> Dict[str, bool]:
+    """Lightweight lint for X posts before approval.
+
+    This is intentionally heuristic.  It catches the weak patterns that make
+    posts feel like a generic affiliate feed: no hook, no source context, no
+    decision axis, or no next action.
+    """
+    clean = text.strip()
+    first_line = clean.splitlines()[0] if clean else ""
+    source_terms = (
+        "韓国", "アメリカ", "米国", "海外", "日本", "ニュース", "SNS", "Google",
+        "Yahoo", "ランキング", "PR TIMES", "話題", "注目", "伸び",
+    )
+    decision_terms = ("見る", "確認", "比較", "条件", "価格", "レビュー", "向く", "注意", "選ぶ", "失敗")
+    action_terms = ("固定ポスト", "プロフィール", "くらメモ", "サイト", "リンク", "比較表", "記事")
+    return {
+        "has_gap_hook": any(
+            token in first_line
+            for token in ("なぜ", "理由", "先に", "失敗", "？", "?", "だけ", "ではない", "より", "伸び")
+        ),
+        "has_source_context": any(token in clean for token in source_terms),
+        "has_decision_axis": any(token in clean for token in decision_terms),
+        "has_next_action": any(token in clean for token in action_terms),
+        "not_too_generic": "おすすめです" not in clean and "人気です" not in clean,
+    }
+
+
+def x_post_quality_score(text: str) -> int:
+    checks = x_post_quality_checks(text)
+    return int(round(sum(1 for ok in checks.values() if ok) / len(checks) * 100))
 
 
 def register_experiment(conn, experiment_key: str, post_id: int, variant: str, hook_type: str, promise: str) -> None:
