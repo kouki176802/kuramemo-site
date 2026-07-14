@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kuramemo LP Site Builder"
+  short_description: "Build Kuramemo-style affiliate LP and comparison pages"
+  default_prompt: "くらメモの型でLP・比較ページ・カテゴリページを作成または改善して"
