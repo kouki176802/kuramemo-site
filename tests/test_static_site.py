@@ -181,6 +181,12 @@ class StaticSiteTest(unittest.TestCase):
             self.assertIn('https://kuramemo.example/sitemap.xml', (site / "robots.txt").read_text(encoding="utf-8"))
             self.assertIn('<loc>https://kuramemo.example/</loc>', (site / "sitemap.xml").read_text(encoding="utf-8"))
             self.assertNotIn('https://kuramemo.example/404.html', (site / "sitemap.xml").read_text(encoding="utf-8"))
+            fortune = (site / "fortune-consultation-services.html").read_text(encoding="utf-8")
+            self.assertIn('FROM SOCIAL', fortune)
+            self.assertIn('https://kuramemo.example/fortune-consultation-services.html', fortune)
+            self.assertIn('fortune-consultation-assets/styles.css', fortune)
+            self.assertTrue((site / "fortune-consultation-assets" / "script.js").exists())
+            self.assertTrue((site / "fortune-consultation-services" / "index.html").exists())
 
     def test_upsert_offer_csv_replaces_existing_offer(self):
         with tempfile.TemporaryDirectory() as tmp:

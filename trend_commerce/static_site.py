@@ -297,6 +297,8 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
             service_quality[page.slug] = _service_on_page_score(html_doc)
         rendered.append(str(out))
 
+    _install_standalone_fortune_lp(target, settings.site_base_url)
+
     not_found_body = """
 <section class="page-card not-found-page">
   <div class="section-kicker">404 / NOT FOUND</div>
@@ -1937,6 +1939,49 @@ def _copy_static_assets(target: Path) -> None:
     source = ROOT / "site_content" / "assets"
     if source.exists():
         shutil.copytree(source, target / "assets", dirs_exist_ok=True)
+
+
+def _install_standalone_fortune_lp(target: Path, site_base_url: str) -> None:
+    """Replace the generated fortune page with the dedicated SNS-first LP."""
+    source = ROOT / "site_content" / "standalone" / "fortune-consultation-services"
+    source_html = source / "index.html"
+    if not source_html.exists():
+        return
+
+    asset_target = target / "fortune-consultation-assets"
+    asset_target.mkdir(parents=True, exist_ok=True)
+    for filename in ("styles.css", "programs.js", "script.js"):
+        asset = source / filename
+        if asset.exists():
+            shutil.copy2(asset, asset_target / filename)
+
+    public_base = (site_base_url or "https://kuramemo-mk.com").rstrip("/")
+    canonical = public_base + "/fortune-consultation-services.html"
+    html_doc = source_html.read_text(encoding="utf-8").replace(
+        "https://kuramemo-mk.com/fortune-consultation-services.html", canonical
+    )
+    if not site_base_url:
+        html_doc = html_doc.replace(
+            '<meta name="robots" content="index,follow,max-image-preview:large">',
+            '<meta name="robots" content="noindex,nofollow">',
+        )
+
+    def with_asset_prefix(prefix: str) -> str:
+        return (
+            html_doc
+            .replace('href="styles.css"', 'href="%sstyles.css"' % prefix)
+            .replace('src="programs.js"', 'src="%sprograms.js"' % prefix)
+            .replace('src="script.js"', 'src="%sscript.js"' % prefix)
+        )
+
+    (target / "fortune-consultation-services.html").write_text(
+        with_asset_prefix("fortune-consultation-assets/"), encoding="utf-8"
+    )
+    pretty_dir = target / "fortune-consultation-services"
+    pretty_dir.mkdir(parents=True, exist_ok=True)
+    (pretty_dir / "index.html").write_text(
+        with_asset_prefix("../fortune-consultation-assets/"), encoding="utf-8"
+    )
 
 
 def markdown_to_html(markdown: str) -> str:
