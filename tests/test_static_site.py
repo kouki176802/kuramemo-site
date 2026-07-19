@@ -185,6 +185,8 @@ class StaticSiteTest(unittest.TestCase):
             self.assertIn('FROM SOCIAL', fortune)
             self.assertIn('https://kuramemo.example/fortune-consultation-services.html', fortune)
             self.assertIn('fortune-consultation-assets/styles.css', fortune)
+            self.assertIn('G-ABC123', fortune)
+            self.assertIn('<meta name="google-site-verification" content="verify-token">', fortune)
             self.assertTrue((site / "fortune-consultation-assets" / "script.js").exists())
             self.assertTrue((site / "fortune-consultation-services" / "index.html").exists())
 

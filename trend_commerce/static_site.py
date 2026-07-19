@@ -297,7 +297,12 @@ def build_static_site(settings: Settings, output_dir: Path | None = None) -> Dic
             service_quality[page.slug] = _service_on_page_score(html_doc)
         rendered.append(str(out))
 
-    _install_standalone_fortune_lp(target, settings.site_base_url)
+    _install_standalone_fortune_lp(
+        target,
+        settings.site_base_url,
+        settings.ga4_measurement_id,
+        settings.gsc_verification,
+    )
 
     not_found_body = """
 <section class="page-card not-found-page">
@@ -1941,7 +1946,12 @@ def _copy_static_assets(target: Path) -> None:
         shutil.copytree(source, target / "assets", dirs_exist_ok=True)
 
 
-def _install_standalone_fortune_lp(target: Path, site_base_url: str) -> None:
+def _install_standalone_fortune_lp(
+    target: Path,
+    site_base_url: str,
+    ga4_measurement_id: str = "",
+    gsc_verification: str = "",
+) -> None:
     """Replace the generated fortune page with the dedicated SNS-first LP."""
     source = ROOT / "site_content" / "standalone" / "fortune-consultation-services"
     source_html = source / "index.html"
@@ -1960,6 +1970,19 @@ def _install_standalone_fortune_lp(target: Path, site_base_url: str) -> None:
     html_doc = source_html.read_text(encoding="utf-8").replace(
         "https://kuramemo-mk.com/fortune-consultation-services.html", canonical
     )
+    head_injections = []
+    ga4 = _ga4_script(ga4_measurement_id)
+    if ga4:
+        head_injections.append(ga4)
+    if gsc_verification:
+        head_injections.append(
+            '<meta name="google-site-verification" content="%s">'
+            % html.escape(gsc_verification, quote=True)
+        )
+    if head_injections:
+        html_doc = html_doc.replace(
+            "</head>", "  %s\n</head>" % "\n  ".join(head_injections), 1
+        )
     if not site_base_url:
         html_doc = html_doc.replace(
             '<meta name="robots" content="index,follow,max-image-preview:large">',

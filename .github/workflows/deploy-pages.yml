@@ -31,10 +31,14 @@ jobs:
       - name: Build public site
         env:
           SITE_BASE_URL: https://kuramemo-mk.com
+          GA4_MEASUREMENT_ID: ${{ vars.GA4_MEASUREMENT_ID }}
+          GSC_VERIFICATION: ${{ vars.GSC_VERIFICATION }}
         run: python -m trend_commerce build-site
       - name: Validate public build
         env:
           SITE_BASE_URL: https://kuramemo-mk.com
+          GA4_MEASUREMENT_ID: ${{ vars.GA4_MEASUREMENT_ID }}
+          GSC_VERIFICATION: ${{ vars.GSC_VERIFICATION }}
         run: python -m trend_commerce publish-check
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -53,4 +57,3 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
-
